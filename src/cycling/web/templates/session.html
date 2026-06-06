@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block content %}
+<article>
+    <hgroup>
+        <h2>Session #{{ session.id }} Report</h2>
+        <p>{{ session.start_time.strftime('%Y-%m-%d %H:%M') }} &middot; {{ session.device_name }}</p>
+    </hgroup>
+
+    <div class="grid">
+        <article>
+            <header>Duration</header>
+            <p style="font-size:1.5rem; font-weight:bold;">{{ session.duration_seconds|int // 60 }}m {{ session.duration_seconds|int % 60 }}s</p>
+        </article>
+        <article>
+            <header>FTP</header>
+            <p style="font-size:1.5rem; font-weight:bold;">{{ session.ftp_at_time }} W</p>
+        </article>
+        <article>
+            <header>Avg Power</header>
+            <p style="font-size:1.5rem; font-weight:bold;">{{ session.avg_power|int if session.avg_power else '--' }} W</p>
+        </article>
+        <article>
+            <header>Normalized Power</header>
+            <p style="font-size:1.5rem; font-weight:bold;">{{ session.normalized_power|int if session.normalized_power else '--' }} W</p>
+        </article>
+    </div>
+
+    <div class="grid">
+        <article>
+            <header>Max Power</header>
+            <p style="font-size:1.2rem;">{{ session.max_power|int if session.max_power else '--' }} W</p>
+        </article>
+        <article>
+            <header>Avg HR</header>
+            <p style="font-size:1.2rem;">{{ session.avg_hr|int if session.avg_hr else '--' }} bpm</p>
+        </article>
+        <article>
+            <header>Max HR</header>
+            <p style="font-size:1.2rem;">{{ session.max_hr|int if session.max_hr else '--' }} bpm</p>
+        </article>
+        <article>
+            <header>Avg Cadence</header>
+            <p style="font-size:1.2rem;">{{ session.avg_cadence|int if session.avg_cadence else '--' }} rpm</p>
+        </article>
+    </div>
+
+    <div class="grid">
+        <article>
+            <header>Intensity Factor</header>
+            <p style="font-size:1.2rem;">{{ session.intensity_factor|round(2) if session.intensity_factor else '--' }}</p>
+        </article>
+        <article>
+            <header>TSS</header>
+            <p style="font-size:1.2rem;">{{ session.tss|round(1) if session.tss else '--' }}</p>
+        </article>
+    </div>
+
+    <article>
+        <header>Time in Zones</header>
+        <table>
+            <thead><tr><th>Zone</th><th>Time</th><th>%</th></tr></thead>
+            <tbody>
+                {% set total = session.time_in_zones.values()|sum %}
+                {% for zd in zones.describe() %}
+                {% set t = session.time_in_zones.get(zd.zone, 0) %}
+                <tr>
+                    <td>{{ zd.name }}</td>
+                    <td>{{ t|int }}s</td>
+                    <td>{{ ((t / total * 100)|round(1)) if total > 0 else '0.0' }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </article>
+
+    <p><a href="/history">&larr; Back to History</a></p>
+</article>
+{% endblock %}

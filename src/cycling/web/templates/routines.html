@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block content %}
+
+<hgroup>
+    <h2>Training Routines</h2>
+    <p>Pre-built structured workouts targeting different physiological systems. Select one to preview or start it from the <a href="/live">Live</a> page.</p>
+</hgroup>
+
+<div class="routines-grid">
+    {% for rt in routines %}
+    <article class="routine-card" style="border-left-color: {{ ['#0066cc','#00cc66','#ffcc00','#ff8800','#ff3300','#cc00ff','#fff'][rt.target_zone-1] }};">
+        <header>
+            <strong>{{ rt.name.replace('_', ' ') }}</strong>
+            <span style="font-size:0.8rem; background:var(--pico-card-background-color); padding:0.1rem 0.5rem; border-radius:4px;">
+                {{ rt.target_zone_name }} &middot; {{ rt.duration_seconds // 60 }} min &middot; {{ rt.segment_count }} segments
+            </span>
+        </header>
+        <p class="desc">{{ rt.description }}</p>
+        <canvas class="profile-chart-sm" id="chart-{{ loop.index0 }}" data-profile="{{ rt.profile | tojson }}" data-duration="{{ rt.duration_seconds }}"></canvas>
+        <div class="segment-list">
+            <details>
+                <summary>View segments ({{ rt.segment_count }})</summary>
+                <table>
+                    <thead>
+                        <tr><th>#</th><th>Duration</th><th>Target</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for seg in rt.segments %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ seg.duration_seconds // 60 }}:{{ '%02d' % (seg.duration_seconds % 60) }}</td>
+                            <td>
+                                {% if seg.target_type == 'cadence' and seg.target_cadence_rpm %}
+                                    {{ seg.target_cadence_rpm|int }} rpm
+                                {% elif seg.target_pct_ftp %}
+                                    {{ seg.target_pct_ftp|int }}% FTP
+                                {% else %}
+                                    --
+                                {% endif %}
+                            </td>
+                            <td>{{ seg.description }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </details>
+        </div>
+        <footer style="display:flex; gap:0.5rem;">
+            <a href="/live" role="button" class="primary" style="padding:0.2rem 0.8rem;">Start in Live</a>
+        </footer>
+    </article>
+    {% endfor %}
+</div>
+
+<script>
+function drawRoutineChart(canvas, profile, duration) {
+    if (!canvas || !profile || profile.length < 2) return;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const w = rect.width || 400;
+    const h = 80;
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    const pad = { top: 2, bottom: 14, left: 30, right: 5 };
+    const plotW = w - pad.left - pad.right;
+    const plotH = h - pad.top - pad.bottom;
+    ctx.clearRect(0, 0, w, h);
+
+    let maxPct = 10;
+    for (let i = 0; i < profile.length; i++) {
+        if (profile[i][1] > maxPct) maxPct = profile[i][1];
+    }
+    maxPct = Math.max(maxPct * 1.15, 50);
+
+    function xOf(t) { return pad.left + (t / duration) * plotW; }
+    function yOf(pct) { return pad.top + plotH - (pct / maxPct) * plotH; }
+
+    // Background grid
+    ctx.strokeStyle = '#2a2a3e';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i <= 4; i++) {
+        const y = pad.top + (i / 4) * plotH;
+        ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    }
+
+    // Profile line
+    ctx.strokeStyle = '#888';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let i = 0; i < profile.length; i++) {
+        const x = xOf(profile[i][0]);
+        const y = yOf(profile[i][1]);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Fill under curve
+    ctx.fillStyle = 'rgba(0, 204, 102, 0.1)';
+    ctx.lineTo(xOf(duration), yOf(0));
+    ctx.lineTo(xOf(0), yOf(0));
+    ctx.closePath();
+    ctx.fill();
+
+    // Y-axis labels
+    ctx.fillStyle = '#666';
+    ctx.font = '8px sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+        const pct = (i / 4) * maxPct;
+        const y = yOf(pct);
+        ctx.fillText(Math.round(pct) + '%', pad.left - 2, y + 3);
+    }
+    // X-axis label
+    ctx.textAlign = 'center';
+    const mins = Math.floor(duration / 60);
+    ctx.fillText(mins + ' min', pad.left + plotW / 2, h - 2);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const canvases = document.querySelectorAll('.profile-chart-sm');
+    canvases.forEach(function(canvas) {
+        try {
+            const profile = JSON.parse(canvas.dataset.profile);
+            const duration = parseFloat(canvas.dataset.duration);
+            drawRoutineChart(canvas, profile, duration);
+        } catch(e) {}
+    });
+    window.addEventListener('resize', function() {
+        canvases.forEach(function(canvas) {
+            try {
+                const profile = JSON.parse(canvas.dataset.profile);
+                const duration = parseFloat(canvas.dataset.duration);
+                drawRoutineChart(canvas, profile, duration);
+            } catch(e) {}
+        });
+    });
+});
+</script>
+{% endblock %}

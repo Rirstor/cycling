@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<article>
+    <hgroup>
+        <h2>Cycling Dashboard</h2>
+        <p>Indoor cycling training interface</p>
+    </hgroup>
+    <div class="grid">
+        <div>
+            <article>
+                <header>FTP</header>
+                <p style="font-size: 2rem; font-weight: bold;">{{ ftp }} W</p>
+            </article>
+        </div>
+        <div>
+            <article>
+                <header>Recent Sessions</header>
+                {% if sessions %}
+                <table>
+                    <thead>
+                        <tr><th>ID</th><th>Date</th><th>Duration</th><th>Avg Power</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for s in sessions %}
+                        <tr>
+                            <td><a href="/session/{{ s.id }}">#{{ s.id }}</a></td>
+                            <td>{{ s.start_time.strftime('%m/%d %H:%M') }}</td>
+                            <td>{{ s.duration_seconds|int // 60 }}m {{ s.duration_seconds|int % 60 }}s</td>
+                            <td>{{ s.avg_power|int }}W</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>No sessions recorded yet. Go to <a href="/live">Live</a> to start.</p>
+                {% endif %}
+            </article>
+        </div>
+    </div>
+    <div class="grid">
+        <a href="/live" role="button" class="primary">Start Training</a>
+        <a href="/live" role="button" class="secondary">Find Devices</a>
+        <a href="/ftp" role="button" class="secondary">Set FTP</a>
+    </div>
+</article>
+{% endblock %}

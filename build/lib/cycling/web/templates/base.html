@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cycling Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        .dashboard-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem; }
+        .middle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+        .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .value-display { font-size: 2.5rem; font-weight: bold; text-align: center; margin: 0.5rem 0; }
+        .zone-label { text-align: center; font-size: 0.9rem; }
+        .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.4rem; vertical-align: middle; }
+        .status-dot.on { background-color: var(--pico-color-green-500); }
+        .status-dot.off { background-color: var(--pico-color-red-500); }
+        .status-dot.recording { background-color: var(--pico-color-red-500); animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .zone-table-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.2rem; margin-top: 0.5rem; }
+        .zone-cell { text-align: center; padding: 0.2rem; border-radius: 4px; font-size: 0.85rem; }
+        #status-bar { margin-bottom: 1rem; }
+        .control-bar { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+        .recording-badge { color: var(--pico-color-red-500); font-weight: bold; }
+        .device-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .device-card { text-align: center; cursor: pointer; transition: transform 0.1s; }
+        .device-card:hover { transform: scale(1.02); }
+        .device-card h3 { margin-bottom: 0.2rem; }
+        .device-card .rssi { font-size: 0.85rem; color: var(--pico-muted-color); }
+        .device-card .mini-routine-chart { width: 100%; height: 55px; border-radius: 3px; margin: 0.2rem 0; }
+        .scanning-indicator { display: inline-flex; align-items: center; gap: 0.3rem; }
+        .scanning-indicator .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pico-color-green-500); animation: pulse 1s infinite; }
+        .scanning-indicator .dot:nth-child(2) { animation-delay: 0.2s; }
+        .scanning-indicator .dot:nth-child(3) { animation-delay: 0.4s; }
+        .routines-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .routine-card { border-left: 4px solid var(--pico-primary); }
+        .routine-card header { display: flex; justify-content: space-between; align-items: center; }
+        .routine-card .meta { font-size: 0.85rem; color: var(--pico-muted-color); margin: 0.3rem 0; }
+        .routine-card .desc { margin: 0.5rem 0; font-size: 0.9rem; }
+        .routine-card canvas { width: 100%; height: 100px; border-radius: 4px; margin: 0.5rem 0; }
+        .profile-chart-sm { width: 100%; height: 80px; border-radius: 4px; margin-top: 0.3rem; }
+        .segment-list { font-size: 0.8rem; color: var(--pico-muted-color); margin-top: 0.3rem; }
+        .segment-list details { margin: 0; }
+        .segment-list summary { cursor: pointer; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <nav class="container-fluid">
+        <ul>
+            <li><strong>Cycling Dashboard</strong></li>
+        </ul>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/live">Live</a></li>
+            <li><a href="/routines">Routines</a></li>
+            <li><a href="/history">History</a></li>
+            <li><a href="/zones">Zones</a></li>
+            <li><a href="/ftp">FTP</a></li>
+        </ul>
+    </nav>
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

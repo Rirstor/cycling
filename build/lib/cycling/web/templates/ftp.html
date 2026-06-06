@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<article>
+    <hgroup>
+        <h2>Functional Threshold Power</h2>
+        <p>Current FTP: <strong>{{ ftp }} W</strong></p>
+    </hgroup>
+    <form onsubmit="return setFTP(event)">
+        <div class="grid">
+            <label>
+                New FTP value (watts)
+                <input type="number" name="ftp-value" id="ftp-value" value="{{ ftp }}" min="50" max="600" required>
+            </label>
+            <div style="display:flex; align-items:flex-end;">
+                <button type="submit" id="ftp-btn">Update FTP</button>
+            </div>
+        </div>
+    </form>
+    <p id="ftp-message"></p>
+</article>
+
+<script>
+function setFTP(event) {
+    event.preventDefault();
+    const value = document.getElementById('ftp-value').value;
+    const btn = document.getElementById('ftp-btn');
+    const msg = document.getElementById('ftp-message');
+
+    const formData = new FormData();
+    formData.append('value', value);
+
+    fetch('/api/ftp', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                msg.textContent = data.message;
+                msg.style.color = 'var(--pico-color-green-500)';
+            } else {
+                msg.textContent = 'Error: ' + data.message;
+                msg.style.color = 'var(--pico-color-red-500)';
+            }
+        })
+        .catch(err => {
+            msg.textContent = 'Error: ' + err;
+            msg.style.color = 'var(--pico-color-red-500)';
+        });
+    return false;
+}
+</script>
+{% endblock %}
