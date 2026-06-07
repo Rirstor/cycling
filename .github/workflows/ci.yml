@@ -218,8 +218,8 @@ jobs:
             adb logcat -d -s PythonServer:I | head -30
             adb logcat -d -s "PythonServer" | grep -q "Server ready" && echo "::notice ::Python server started successfully" || { echo "::error ::Python server did not start"; adb logcat -d -s "*:E" | head -30; exit 1; }
 
-            # Install Appium
-            npm install -g appium@2
+            # Install Appium 3 and the uiautomator2 driver
+            npm install -g appium@3.0.0-rc.2
             appium driver install uiautomator2
             appium &
             APPIUM_PID=$!
