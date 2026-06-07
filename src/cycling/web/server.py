@@ -5,10 +5,10 @@ import importlib.resources
 import json
 import os
 from datetime import datetime
-from typing import Optional
+from typing import AsyncGenerator, Optional
 
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from jinja2 import Environment, FileSystemLoader
 
@@ -174,12 +174,13 @@ async def api_record_stop() -> dict:
     if not ble_manager.is_recording or ble_manager.session_id is None:
         return {"status": "error", "message": "Not recording"}
     session_id = ble_manager.session_id
+    _ftp_cfg = load_latest_ftp()
     session = Session(
         id=session_id,
         start_time=ble_manager.start_time or datetime.now(),
         end_time=datetime.now(),
         device_name="",
-        ftp_at_time=load_latest_ftp().value_watts if load_latest_ftp() else 200,
+        ftp_at_time=_ftp_cfg.value_watts if _ftp_cfg else 200,
         records=ble_manager.records,
     )
     end_session(session_id, session)
@@ -253,7 +254,7 @@ async def sse_live(request: Request) -> StreamingResponse:
     queue: asyncio.Queue[dict] = asyncio.Queue(maxsize=100)
     ble_manager.subscribe(queue)
 
-    async def event_generator() -> str:
+    async def event_generator() -> AsyncGenerator[str, None]:
         try:
             while True:
                 if await request.is_disconnected():
@@ -285,7 +286,7 @@ async def sse_devices(request: Request) -> StreamingResponse:
     if scan_manager.devices:
         await queue.put({"type": "devices", "devices": scan_manager.devices})
 
-    async def event_generator() -> str:
+    async def event_generator() -> AsyncGenerator[str, None]:
         try:
             while True:
                 if await request.is_disconnected():

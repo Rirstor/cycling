@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Any, AsyncIterator, Optional
 
 from cycling.data.models import CyclingRecord
+from cycling.ble.protocol import BleClientProtocol
 
 from cycling.platform.bridge import (
     ble_data_queue,
@@ -14,7 +15,7 @@ from cycling.platform.bridge import (
 )
 
 
-class AndroidBleClient:
+class AndroidBleClient(BleClientProtocol):
     """Android BLE client that receives data from Kotlin via Chaquopy JNI bridge.
 
     Does NOT import bleak — all BLE operations are handled on the Kotlin side.

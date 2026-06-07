@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("com.chaquo.python")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
@@ -18,13 +19,6 @@ android {
 
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")
-        }
-
-        python {
-            buildPython("/usr/bin/python3")
-            pip {
-                install(".")
-            }
         }
     }
 
@@ -48,6 +42,20 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+    }
+}
+
+chaquopy {
+    defaultConfig {
+        version = "3.11"
+        pip {
+            install("fastapi")
+            install("uvicorn")
+            install("jinja2")
+            install("python-multipart")
+            install("rich")
+            install("typer")
+        }
     }
 }
 

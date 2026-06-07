@@ -9,6 +9,7 @@ chaquopy>=16.0.0
 [dev]
 pytest>=8.0
 pytest-asyncio>=0.24
+pytest-cov>=5.0
 
 [web]
 fastapi>=0.115.0

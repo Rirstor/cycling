@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime
-from pathlib import Path
 from typing import Optional
 
 import typer
@@ -10,7 +9,7 @@ from rich.console import Console
 from rich.live import Live
 
 from cycling import __version__
-from cycling.ble.registry import device_name_for_address, load_known_devices, mark_device_offline, resolve_identifier
+from cycling.ble.registry import device_name_for_address, load_known_devices, resolve_identifier
 from cycling.data.models import CyclingRecord, Session, ZONE_DEFINITIONS
 from cycling.data.storage import (
     create_session,

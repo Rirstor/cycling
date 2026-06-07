@@ -72,7 +72,7 @@ class BleManager(private val context: Context) {
             }
         }
 
-        bleScanner.startScan(filters, settings, scanCallback, mainHandler)
+        bleScanner.startScan(filters, settings, scanCallback)
         Log.i(TAG, "BLE scanning started")
     }
 

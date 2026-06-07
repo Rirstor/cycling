@@ -3,10 +3,12 @@ from __future__ import annotations
 import asyncio
 import struct
 from datetime import datetime
-from typing import Any, AsyncIterator, Optional
+from typing import TYPE_CHECKING, Any, AsyncIterator, Optional
 
-from bleak import BleakClient, BleakScanner
+from cycling.ble.protocol import BleClientProtocol
 
+if TYPE_CHECKING:
+    from bleak import BleakClient
 from cycling.data.models import CyclingRecord
 
 FTMS_SERVICE_UUID = "00001826-0000-1000-8000-00805f9b34fb"
@@ -71,9 +73,6 @@ def _parse_indoor_bike_data(data: bytes) -> dict[str, Any]:
     return result
 
 
-from cycling.ble.protocol import BleClientProtocol
-
-
 class CyclingClient(BleClientProtocol):
     def __init__(self):
         self._trainer_client: Optional[BleakClient] = None
@@ -83,6 +82,8 @@ class CyclingClient(BleClientProtocol):
         self._hr_address: str = ""
 
     async def connect(self, trainer_address: str, hr_address: Optional[str] = None, timeout: float = 10.0) -> None:
+        from bleak import BleakClient
+
         self._trainer_address = trainer_address
         self._hr_address = hr_address or ""
         self._trainer_client = BleakClient(trainer_address, disconnected_callback=self._on_disconnect)
@@ -101,7 +102,7 @@ class CyclingClient(BleClientProtocol):
     def _on_hr_disconnect(self, client: BleakClient) -> None:
         pass
 
-    def _hr_notification_handler(self, sender: int, data: bytes) -> None:
+    def _hr_notification_handler(self, characteristic: Any, data: bytearray) -> None:
         heart_rate = data[1] if len(data) > 1 else 0
         self._hr_data["heart_rate"] = heart_rate
         self._hr_data["timestamp"] = datetime.now()
@@ -111,8 +112,8 @@ class CyclingClient(BleClientProtocol):
             return
         data_queue: asyncio.Queue[CyclingRecord] = asyncio.Queue()
 
-        def indoor_bike_handler(sender: int, data: bytes) -> None:
-            parsed = _parse_indoor_bike_data(data)
+        def indoor_bike_handler(characteristic: Any, data: bytearray) -> None:
+            parsed = _parse_indoor_bike_data(bytes(data))
             record = CyclingRecord(
                 timestamp=datetime.now(),
                 power_watts=parsed.get("instantaneous_power"),

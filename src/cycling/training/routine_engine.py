@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
 from typing import Any, Literal, Optional
 
 from cycling.data.models import WorkoutTemplate, WorkoutSegment
@@ -108,7 +107,6 @@ class RoutineEngine:
 
     def evaluate(self, power_watts: Optional[float], cadence_rpm: Optional[float]) -> dict[str, Any]:
         targets = self.get_targets()
-        seg = self.get_current_segment()
 
         power_within_range = True
         cadence_within_range = True

@@ -163,7 +163,7 @@ def list_routines() -> list[dict]:
 def match_workout_type(time_in_zones: dict[str, float], total_seconds: float) -> str:
     if total_seconds <= 0:
         return "unknown"
-    predominant = max(time_in_zones, key=time_in_zones.get)
+    predominant = max(time_in_zones, key=lambda k: time_in_zones[k])
     zone_to_type = {
         "Active Recovery": "recovery",
         "Endurance": "endurance",
