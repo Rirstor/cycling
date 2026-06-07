@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-REGISTRY_PATH = Path.home() / ".cycling" / "devices.json"
+REGISTRY_PATH = Path(
+    os.environ.get("CYCLING_DATA_DIR", Path.home() / ".cycling")
+) / "devices.json"
 
 
 def _load_raw() -> dict[str, dict]:

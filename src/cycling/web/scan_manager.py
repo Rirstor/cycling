@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import os
+import sys
 from datetime import datetime
 from typing import Any, Optional
 
@@ -10,6 +12,7 @@ from cycling.ble.scanner import scan_devices
 class ScanManager:
     def __init__(self) -> None:
         self._task: Optional[asyncio.Task] = None
+        self._bridge_task: Optional[asyncio.Task] = None
         self._subscribers: list[asyncio.Queue[dict[str, Any]]] = []
         self._devices: dict[str, dict[str, Any]] = {}
         self._running = False
@@ -17,13 +20,20 @@ class ScanManager:
 
     @property
     def devices(self) -> list[dict[str, Any]]:
-        return sorted(self._devices.values(), key=lambda d: d.get("rssi", -100) or -100, reverse=True)
+        return sorted(
+            self._devices.values(),
+            key=lambda d: d.get("rssi", -100) or -100,
+            reverse=True,
+        )
 
     async def start(self) -> None:
         if self._running:
             return
         self._running = True
-        self._task = asyncio.create_task(self._scan_loop())
+        if getattr(sys, "platform", "") == "android" or "ANDROID_BOOT" in os.environ:
+            self._bridge_task = asyncio.create_task(self._bridge_listener())
+        else:
+            self._task = asyncio.create_task(self._scan_loop())
 
     async def stop(self) -> None:
         self._running = False
@@ -31,12 +41,48 @@ class ScanManager:
         if self._task:
             self._task.cancel()
             self._task = None
+        if self._bridge_task:
+            self._bridge_task.cancel()
+            self._bridge_task = None
 
     def pause(self) -> None:
         self._paused = True
 
     def resume(self) -> None:
         self._paused = False
+
+    async def _bridge_listener(self) -> None:
+        from cycling.platform.bridge import device_queue
+
+        while self._running:
+            try:
+                data = await asyncio.wait_for(device_queue.get(), timeout=5.0)
+            except asyncio.TimeoutError:
+                if self._devices:
+                    await self._broadcast(
+                        {"type": "devices", "devices": self.devices}
+                    )
+                continue
+            addr = data.get("address", "")
+            now = datetime.now().isoformat()
+            self._devices[addr] = {
+                "name": data.get("name", "Unknown"),
+                "address": addr,
+                "rssi": data.get("rssi"),
+                "last_seen": now,
+            }
+            stale = [
+                addr
+                for addr, info in self._devices.items()
+                if (
+                    datetime.now()
+                    - datetime.fromisoformat(info["last_seen"])
+                ).total_seconds()
+                > 60
+            ]
+            for addr in stale:
+                del self._devices[addr]
+            await self._broadcast({"type": "devices", "devices": self.devices})
 
     async def _scan_loop(self) -> None:
         while self._running:
@@ -46,7 +92,11 @@ class ScanManager:
                     now = datetime.now().isoformat()
                     for d in discovered:
                         addr = d.get("address", "")
-                        if addr not in self._devices or (d.get("rssi") is not None and d.get("rssi", -100) > self._devices[addr].get("rssi", -100)):
+                        if addr not in self._devices or (
+                            d.get("rssi") is not None
+                            and d.get("rssi", -100)
+                            > self._devices[addr].get("rssi", -100)
+                        ):
                             self._devices[addr] = {
                                 "name": d.get("name", "Unknown"),
                                 "address": addr,
@@ -55,12 +105,22 @@ class ScanManager:
                             }
                         else:
                             self._devices[addr]["last_seen"] = now
-                    stale = [addr for addr, info in self._devices.items()
-                             if (datetime.now() - datetime.fromisoformat(info["last_seen"])).total_seconds() > 60]
+                    stale = [
+                        addr
+                        for addr, info in self._devices.items()
+                        if (
+                            datetime.now()
+                            - datetime.fromisoformat(info["last_seen"])
+                        ).total_seconds()
+                        > 60
+                    ]
                     for addr in stale:
                         del self._devices[addr]
                     device_list = self.devices
-                    data: dict[str, Any] = {"type": "devices", "devices": device_list}
+                    data: dict[str, Any] = {
+                        "type": "devices",
+                        "devices": device_list,
+                    }
                     await self._broadcast(data)
                 except asyncio.CancelledError:
                     raise

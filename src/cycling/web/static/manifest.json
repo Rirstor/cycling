@@ -1,0 +1,24 @@
+{
+  "name": "Cycling Dashboard",
+  "short_name": "Cycling",
+  "description": "Indoor cycling training dashboard with BLE trainer support",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#13171f",
+  "theme_color": "#1095c1",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

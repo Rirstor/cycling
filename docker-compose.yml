@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  android-emulator:
+    image: us-docker.pkg.dev/android-emulator-72959/emulator-ci/emulator:latest
+    devices:
+      - /dev/kvm
+    environment:
+      ADBKEY: /home/user/.android/adbkey
+    volumes:
+      - ./android/app/build/outputs/apk/debug:/apk
+    ports:
+      - "5554:5554"
+      - "5555:5555"
+    command: >
+      sh -c "
+        echo 'no' | avd create --force -n test \
+          -k 'system-images;android-34;google_apis;x86_64' || true &&
+        pixel_6 -avd test -no-window -no-audio -memory 2048 -wipe-data &
+        adb wait-for-device &&
+        adb install /apk/app-debug.apk &&
+        adb shell am start -n com.cycling.app/.MainActivity &&
+        tail -f /dev/null
+      "
+
+  test-runner:
+    image: python:3.11-slim
+    depends_on:
+      - android-emulator
+    volumes:
+      - ./tests/android:/tests
+      - ./android/app/build/outputs/apk/debug:/apk
+    environment:
+      APPIUM_HOST: android-emulator
+    command: >
+      sh -c "
+        pip install --quiet appium-python-client &&
+        python /tests/test_live_dashboard.py
+      "

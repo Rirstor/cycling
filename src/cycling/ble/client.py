@@ -71,7 +71,10 @@ def _parse_indoor_bike_data(data: bytes) -> dict[str, Any]:
     return result
 
 
-class CyclingClient:
+from cycling.ble.protocol import BleClientProtocol
+
+
+class CyclingClient(BleClientProtocol):
     def __init__(self):
         self._trainer_client: Optional[BleakClient] = None
         self._hr_client: Optional[BleakClient] = None

@@ -3,6 +3,9 @@ bleak-retry-connector>=4.0.0
 rich>=13.0.0
 typer>=0.12.0
 
+[android]
+chaquopy>=16.0.0
+
 [dev]
 pytest>=8.0
 pytest-asyncio>=0.24

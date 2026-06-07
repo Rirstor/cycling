@@ -11,12 +11,16 @@ src/cycling.egg-info/entry_points.txt
 src/cycling.egg-info/requires.txt
 src/cycling.egg-info/top_level.txt
 src/cycling/ble/__init__.py
+src/cycling/ble/android_client.py
 src/cycling/ble/client.py
+src/cycling/ble/protocol.py
 src/cycling/ble/registry.py
 src/cycling/ble/scanner.py
 src/cycling/data/__init__.py
 src/cycling/data/models.py
 src/cycling/data/storage.py
+src/cycling/platform/__init__.py
+src/cycling/platform/bridge.py
 src/cycling/training/__init__.py
 src/cycling/training/routine_engine.py
 src/cycling/training/workouts.py
@@ -27,6 +31,8 @@ src/cycling/web/__init__.py
 src/cycling/web/ble_manager.py
 src/cycling/web/scan_manager.py
 src/cycling/web/server.py
+src/cycling/web/static/manifest.json
+src/cycling/web/static/sw.js
 src/cycling/web/templates/base.html
 src/cycling/web/templates/ftp.html
 src/cycling/web/templates/history.html

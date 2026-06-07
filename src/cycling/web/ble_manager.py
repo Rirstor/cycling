@@ -4,7 +4,7 @@ import asyncio
 from datetime import datetime
 from typing import Any, Optional
 
-from cycling.ble.client import CyclingClient
+from cycling.ble import create_ble_client
 from cycling.data.models import CyclingRecord, ZONE_DEFINITIONS
 from cycling.data.storage import load_latest_ftp
 from cycling.training.routine_engine import RoutineEngine
@@ -160,7 +160,7 @@ class BLEManager:
         for z_def in ZONE_DEFINITIONS:
             self._time_in_zones[z_def["zone"].value] = 0.0
 
-        self._client = CyclingClient()
+        self._client = create_ble_client()
         await self._client.connect(address, hr_address)
         self._connected = True
         self._start_time = datetime.now()

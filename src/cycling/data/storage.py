@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -7,7 +8,9 @@ from typing import Optional
 
 from cycling.data.models import CyclingRecord, FTPConfig, Session
 
-DB_PATH = Path.home() / ".cycling" / "cycling.db"
+DB_PATH = Path(
+    os.environ.get("CYCLING_DATA_DIR", Path.home() / ".cycling")
+) / "cycling.db"
 
 
 def get_connection() -> sqlite3.Connection:

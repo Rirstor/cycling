@@ -4,23 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cycling Dashboard</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <style>
-        .dashboard-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem; }
-        .middle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
-        .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        .value-display { font-size: 2.5rem; font-weight: bold; text-align: center; margin: 0.5rem 0; }
-        .zone-label { text-align: center; font-size: 0.9rem; }
-        .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.4rem; vertical-align: middle; }
-        .status-dot.on { background-color: var(--pico-color-green-500); }
-        .status-dot.off { background-color: var(--pico-color-red-500); }
-        .status-dot.recording { background-color: var(--pico-color-red-500); animation: pulse 1s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        .zone-table-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.2rem; margin-top: 0.5rem; }
-        .zone-cell { text-align: center; padding: 0.2rem; border-radius: 4px; font-size: 0.85rem; }
-        #status-bar { margin-bottom: 1rem; }
-        .control-bar { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
-        .recording-badge { color: var(--pico-color-red-500); font-weight: bold; }
         .device-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin: 1rem 0; }
         .device-card { text-align: center; cursor: pointer; transition: transform 0.1s; }
         .device-card:hover { transform: scale(1.02); }
@@ -41,6 +29,26 @@
         .segment-list { font-size: 0.8rem; color: var(--pico-muted-color); margin-top: 0.3rem; }
         .segment-list details { margin: 0; }
         .segment-list summary { cursor: pointer; font-size: 0.85rem; }
+
+        /* Responsive layout for phones */
+        .metrics-chart-layout { display: grid; grid-template-columns: minmax(180px, 1.2fr) 2fr; gap: 1rem; margin-bottom: 1rem; }
+        .metrics-column { display: flex; flex-direction: column; gap: 1rem; }
+        .chart-column { min-height: 250px; }
+
+        @media (max-width: 599px) and (orientation: portrait) {
+            .device-grid   { grid-template-columns: 1fr; }
+            .value-display { font-size: 1.8rem; }
+            .metrics-chart-layout { grid-template-columns: 1fr; }
+            #workout-chart { height: 140px !important; }
+        }
+        @media (max-height: 499px) and (orientation: landscape) {
+            .value-display { font-size: 1.5rem; }
+            .metrics-chart-layout { grid-template-columns: minmax(140px, 1fr) 2.5fr; }
+            #workout-chart { height: 100px !important; }
+        }
+
+        /* Prevent scroll interference on chart canvas */
+        #workout-chart { touch-action: none; }
     </style>
 </head>
 <body>
@@ -60,5 +68,10 @@
     <main class="container">
         {% block content %}{% endblock %}
     </main>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js');
+        }
+    </script>
 </body>
 </html>

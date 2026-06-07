@@ -1,0 +1,35 @@
+FROM openjdk:17-jdk-slim
+
+ENV ANDROID_SDK_ROOT=/opt/android-sdk
+ENV ANDROID_HOME=$ANDROID_SDK_ROOT
+ENV ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/26.1.10909125
+ENV PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget unzip python3 python3-pip python3-venv \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip \
+    && unzip commandlinetools-linux-*.zip -d /tmp/cmdline-tools \
+    && mkdir -p $ANDROID_SDK_ROOT/cmdline-tools \
+    && mv /tmp/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest \
+    && rm commandlinetools-linux-*.zip
+
+RUN yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses \
+    && $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
+        "platform-tools" \
+        "platforms;android-34" \
+        "build-tools;34.0.0" \
+        "ndk;26.1.10909125"
+
+RUN wget -q https://services.gradle.org/distributions/gradle-8.5-bin.zip \
+    && unzip gradle-8.5-bin.zip -d /opt \
+    && rm gradle-8.5-bin.zip
+ENV PATH=$PATH:/opt/gradle-8.5/bin
+
+RUN python3 -m venv /opt/venv && \
+    /opt/venv/bin/pip install --upgrade pip setuptools wheel build
+
+ENV PATH=/opt/venv/bin:$PATH
+
+WORKDIR /workspace

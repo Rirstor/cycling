@@ -3,11 +3,13 @@ from __future__ import annotations
 import asyncio
 import importlib.resources
 import json
+import os
 from datetime import datetime
 from typing import Optional
 
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from jinja2 import Environment, FileSystemLoader
 
 import cycling.web
@@ -41,6 +43,10 @@ def render(name: str, request: Request, **context: object) -> HTMLResponse:
 
 app = FastAPI(title="Cycling Dashboard")
 
+static_dir = importlib.resources.files(cycling.web) / "static"
+if static_dir.is_dir():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
 
 @app.on_event("startup")
 async def startup() -> None:
@@ -51,6 +57,11 @@ async def startup() -> None:
 async def shutdown() -> None:
     await ble_manager.disconnect()
     await scan_manager.stop()
+
+
+@app.get("/health")
+async def health() -> dict:
+    return {"status": "ok"}
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -301,3 +312,20 @@ async def sse_devices(request: Request) -> StreamingResponse:
 def main() -> None:
     import uvicorn
     uvicorn.run("cycling.web.server:app", host="0.0.0.0", port=8080)
+
+
+def main_android(data_dir: str) -> None:
+    """Entry point called from Kotlin via Chaquopy.
+
+    The Android app passes its filesDir so the data layer uses scoped storage
+    instead of ~/.cycling.
+    """
+    os.environ["CYCLING_DATA_DIR"] = data_dir
+    import uvicorn
+    uvicorn.run(
+        "cycling.web.server:app",
+        host="127.0.0.1",
+        port=8080,
+        log_level="info",
+        loop="asyncio",
+    )

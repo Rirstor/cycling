@@ -25,6 +25,9 @@ web = [
     "python-multipart>=0.0.18",
     "jinja2>=3.1.0",
 ]
+android = [
+    "chaquopy>=16.0.0",
+]
 
 [project.scripts]
 cycling = "cycling.main:app"
@@ -34,8 +37,9 @@ cycling-web = "cycling.web.server:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-cycling = ["web/templates/*"]
+cycling = ["web/templates/*", "web/static/*"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+norecursedirs = ["tests/android", "android"]
