@@ -167,6 +167,15 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Grant KVM permissions to runner
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm
+            echo "KVM permissions granted"
+          else
+            echo "KVM not available on this runner"
+          fi
+
       - name: Create and start emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
