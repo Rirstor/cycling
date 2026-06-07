@@ -92,7 +92,7 @@ build-apk:
   before_script:
     - cd android
   script:
-    - ./gradlew assembleDebug --stacktrace
+    - gradle assembleDebug --stacktrace
   artifacts:
     paths:
       - android/app/build/outputs/
