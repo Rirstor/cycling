@@ -59,7 +59,11 @@ async def scan_devices(timeout: int = 10, cycling_only: bool = True) -> list[dic
             "services": service_names,
             "details": d,
         })
-    results.sort(key=lambda x: x["rssi"] or -100, reverse=True)
+    def _rssi_key(d: dict[str, object]) -> int:
+        rssi = d.get("rssi")
+        return rssi if isinstance(rssi, int) else -100
+
+    results.sort(key=_rssi_key, reverse=True)
     save_scanned_devices(results)
     return results
 

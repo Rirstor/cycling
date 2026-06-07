@@ -1,18 +1,16 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
 from rich.align import Align
 from rich.console import Console
 from rich.layout import Layout
-from rich.live import Live
 from rich.panel import Panel
 from rich.progress_bar import ProgressBar
 from rich.table import Table
 from rich.text import Text
 
-from cycling.data.models import CyclingRecord, Session, TrainingZone, ZONE_DEFINITIONS
+from cycling.data.models import CyclingRecord, Session, ZONE_DEFINITIONS
 from cycling.training.zones import CogganZones
 
 console = Console()
@@ -139,7 +137,6 @@ def render_session_report(session: Session, zones: CogganZones) -> None:
     console.print(zone_table)
 
     from cycling.training.workouts import match_workout_type
-    type_names = {z_def["name"]: t for z_def in ZONE_DEFINITIONS}
     matched = match_workout_type(
         {z_def["name"]: session.time_in_zones.get(z_def["zone"].value, 0) for z_def in ZONE_DEFINITIONS},
         dur

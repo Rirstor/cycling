@@ -70,7 +70,8 @@ def create_session(device_name: str, ftp: int) -> int:
             "INSERT INTO sessions (start_time, device_name, ftp_at_time) VALUES (?, ?, ?)",
             (datetime.now().isoformat(), device_name, ftp),
         )
-        return cur.lastrowid
+        result = cur.lastrowid
+        return result if result is not None else 0
 
 
 def end_session(session_id: int, session: Session) -> None:

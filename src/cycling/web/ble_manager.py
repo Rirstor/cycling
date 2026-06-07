@@ -6,6 +6,7 @@ from typing import Any, Optional
 
 from cycling.ble import create_ble_client
 from cycling.data.models import CyclingRecord, ZONE_DEFINITIONS
+from cycling.ble.protocol import BleClientProtocol
 from cycling.data.storage import load_latest_ftp
 from cycling.training.routine_engine import RoutineEngine
 from cycling.training.zones import CogganZones
@@ -23,7 +24,7 @@ ZONE_COLORS = {
 
 class BLEManager:
     def __init__(self) -> None:
-        self._client: Optional[CyclingClient] = None
+        self._client: Optional[BleClientProtocol] = None
         self._task: Optional[asyncio.Task] = None
         self._subscribers: list[asyncio.Queue[dict[str, Any]]] = []
         self._records: list[CyclingRecord] = []
@@ -49,7 +50,7 @@ class BLEManager:
         return self._recording
 
     @property
-    def client(self) -> Optional[CyclingClient]:
+    def client(self) -> Optional[BleClientProtocol]:
         return self._client
 
     @property
