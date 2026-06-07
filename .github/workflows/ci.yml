@@ -196,18 +196,26 @@ jobs:
             # Install APK
             adb install apk/app-debug.apk
 
+            # Grant required permissions (needed before app can start BLE/WebView)
+            adb shell pm grant com.cycling.app android.permission.BLUETOOTH_SCAN || true
+            adb shell pm grant com.cycling.app android.permission.BLUETOOTH_CONNECT || true
+            adb shell pm grant com.cycling.app android.permission.ACCESS_FINE_LOCATION || true
+
+            # Clear logcat before launching
+            adb logcat -c
+
             # Launch app
             adb shell am start -n com.cycling.app/.MainActivity
 
-            # Wait for Python server
-            sleep 10
+            # Wait for Python server to start (waitForReady timeout is 15s)
+            sleep 20
 
             # Verify app is running via logcat
-            adb logcat -d -s PythonServer:I | head -20
-            adb logcat -d -s "PythonServer" | grep -q "Server ready" && echo "Server started" || echo "Server check: $(adb logcat -d -s PythonServer:I 2>&1 | tail -5)"
+            adb logcat -d -s PythonServer:I | head -30
+            adb logcat -d -s "PythonServer" | grep -q "Server ready" && echo "Server started" || echo "Server check: $(adb logcat -d -s PythonServer:I 2>&1 | tail -10)"
 
             # Run Appium tests
-            pip install --quiet appium-python-client
+            pip install --quiet appium-python-client pytest
             python tests/android/test_live_dashboard.py
 
   deploy:
