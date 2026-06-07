@@ -131,6 +131,13 @@ jobs:
             "ndk;26.1.10909125" \
             || true
 
+      - name: Build Python wheel
+        run: |
+          pip install build
+          python -m build --wheel
+          mkdir -p android/dist
+          cp dist/cycling-*.whl android/dist/
+
       - name: Build APK
         run: |
           cd android
