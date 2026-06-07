@@ -18,6 +18,7 @@ from cycling.data.models import Session
 from cycling.data.storage import (
     create_session,
     end_session,
+    init_db,
     load_latest_ftp,
     load_session,
     load_sessions,
@@ -322,6 +323,7 @@ def main_android(data_dir: str) -> None:
     instead of ~/.cycling.
     """
     os.environ["CYCLING_DATA_DIR"] = data_dir
+    init_db()
     import uvicorn
     uvicorn.run(
         "cycling.web.server:app",
