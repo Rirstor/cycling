@@ -216,13 +216,7 @@ jobs:
 
             # Verify Python server started
             adb logcat -d -s PythonServer:I | head -30
-            if adb logcat -d -s "PythonServer" | grep -q "Server ready"; then
-              echo "::notice ::Python server started successfully"
-            else
-              echo "::error ::Python server did not start"
-              adb logcat -d -s "*:E" | head -30
-              exit 1
-            fi
+            adb logcat -d -s "PythonServer" | grep -q "Server ready" && echo "::notice ::Python server started successfully" || { echo "::error ::Python server did not start"; adb logcat -d -s "*:E" | head -30; exit 1; }
 
             # Install Appium
             npm install -g appium@2
@@ -234,10 +228,7 @@ jobs:
 
             # Run Appium tests
             pip install --quiet appium-python-client pytest
-            python -m pytest tests/android/test_live_dashboard.py -v 2>&1
-            APPIUM_EXIT=$?
-            kill $APPIUM_PID 2>/dev/null || true
-            exit $APPIUM_EXIT
+            python -m pytest tests/android/test_live_dashboard.py -v 2>&1; APPIUM_EXIT=$?; kill $APPIUM_PID 2>/dev/null || true; exit $APPIUM_EXIT
 
   deploy:
     name: Deploy APK to release
