@@ -49,7 +49,7 @@ chaquopy {
     defaultConfig {
         version = "3.11"
         pip {
-            install("../dist/cycling-*.whl")
+            install("../dist/cycling-app-py3-none-any.whl")
         }
     }
 }

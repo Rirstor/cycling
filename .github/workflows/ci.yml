@@ -136,7 +136,7 @@ jobs:
           pip install build
           python -m build --wheel
           mkdir -p android/dist
-          cp dist/cycling-*.whl android/dist/
+          cp dist/cycling-*.whl android/dist/cycling-app-py3-none-any.whl
 
       - name: Build APK
         run: |
