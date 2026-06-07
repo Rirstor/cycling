@@ -51,6 +51,8 @@ chaquopy {
         pip {
             install("fastapi")
             install("uvicorn")
+            install("jinja2")
+            install("python-multipart")
             install("rich")
             install("typer")
         }
