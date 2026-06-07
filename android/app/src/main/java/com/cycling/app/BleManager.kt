@@ -8,12 +8,9 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
-import android.content.Intent
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -31,7 +28,7 @@ class BleManager(private val context: Context) {
         val HEART_RATE_MEASUREMENT = UUID.fromString("00002a37-0000-1000-8000-00805f9b34fb")
     }
 
-    private val bluetoothAdapter: BluetoothAdapter? =
+    val bluetoothAdapter: BluetoothAdapter? =
         (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
 
     private val bleScanner = bluetoothAdapter?.bluetoothLeScanner
@@ -53,12 +50,6 @@ class BleManager(private val context: Context) {
     fun startScanning() {
         if (bleScanner == null) return
 
-        val filters = listOf(
-            ScanFilter.Builder()
-                .setServiceUuid(android.os.ParcelUuid(FTMS_SERVICE))
-                .build()
-        )
-
         val settings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
             .build()
@@ -66,14 +57,36 @@ class BleManager(private val context: Context) {
         scanCallback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
                 val device = result.device
-                val name = device.name ?: "Unknown"
+                val name = device.name ?: return
                 val rssi = result.rssi
-                BleBridge.onDeviceFound(device.address, name, rssi)
+                if (isCyclingDevice(name, result)) {
+                    BleBridge.onDeviceFound(device.address, name, rssi)
+                }
             }
         }
 
-        bleScanner.startScan(filters, settings, scanCallback)
-        Log.i(TAG, "BLE scanning started")
+        bleScanner.startScan(null, settings, scanCallback)
+        Log.i(TAG, "BLE scanning started (unfiltered)")
+    }
+
+    private fun isCyclingDevice(name: String, result: ScanResult): Boolean {
+        val lower = name.lowercase()
+        val cyclingKeywords = listOf(
+            "kickr", "tacx", "neo", "suito", "wahoo", "elite",
+            "zwift", "hub", "hammer", "h3", "flux", "snap",
+            "dragon", "stages", "garmin", "assist"
+        )
+        if (cyclingKeywords.any { lower.contains(it) }) return true
+
+        val serviceUuids = result.scanRecord?.serviceUuids ?: return false
+        val cyclingServiceUuids = setOf(
+            UUID.fromString("00001826-0000-1000-8000-00805f9b34fb"),
+            UUID.fromString("00001818-0000-1000-8000-00805f9b34fb"),
+            UUID.fromString("00001816-0000-1000-8000-00805f9b34fb"),
+            UUID.fromString("0000180d-0000-1000-8000-00805f9b34fb"),
+            UUID.fromString("0000180f-0000-1000-8000-00805f9b34fb"),
+        )
+        return serviceUuids.any { it in cyclingServiceUuids }
     }
 
     fun stopScanning() {

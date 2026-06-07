@@ -147,7 +147,11 @@ else
 fi
 rm -f "$DASHBOARD_BODY_FILE"
 
-# ── step 8 — check logcat for crashes ────────────────────────
+# ── step 8 — check logcat for BLE scan results ─────────────
+info "BLE scan diagnostics (last 10 BleManager entries):"
+adb -s "$DEVICE" logcat -d -s "BleManager" 2>/dev/null | tail -10 || true
+
+# ── step 9 — check logcat for crashes ────────────────────────
 CRASH_COUNT=$(adb -s "$DEVICE" logcat -d -b crash 2>/dev/null | grep -c "${APP_ID}" || true)
 if [ "$CRASH_COUNT" -gt 0 ]; then
     warn "Found ${CRASH_COUNT} crash log(s) for ${APP_ID}."
