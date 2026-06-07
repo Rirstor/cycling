@@ -59,11 +59,13 @@ chaquopy {
     }
 }
 
-tasks.register<Copy>("copyPythonSource") {
+val copyPythonSource by tasks.registering(Copy::class) {
     from("${rootProject.projectDir}/../src/cycling")
     into("src/main/python/cycling")
 }
-tasks.named("preBuild") { dependsOn("copyPythonSource") }
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("PythonSources") }.configureEach {
+    dependsOn(copyPythonSource)
+}
 
 dependencies {
     implementation("androidx.webkit:webkit:1.10.0")
