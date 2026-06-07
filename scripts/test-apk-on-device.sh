@@ -131,13 +131,23 @@ fi
 
 # ── step 7 — verify dashboard serves ─────────────────────────
 info "Testing dashboard page ..."
-DASHBOARD_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "http://127.0.0.1:8080/" 2>/dev/null || echo "000")
+DASHBOARD_BODY_FILE=$(mktemp)
+DASHBOARD_CODE=$(curl -s -o "$DASHBOARD_BODY_FILE" -w "%{http_code}" --max-time 5 "http://127.0.0.1:8080/" 2>/dev/null || echo "000")
 if [ "$DASHBOARD_CODE" = "200" ]; then
     pass "Dashboard serves correctly (HTTP ${DASHBOARD_CODE})."
 else
     warn "Dashboard returned HTTP ${DASHBOARD_CODE}."
+    warn "Response body (first 2KB):"
+    head -c 2048 "$DASHBOARD_BODY_FILE" || true
+    echo ""
+    info "Recent logcat (PythonServer):"
+    adb -s "$DEVICE" logcat -d -s "PythonServer:I" "PythonServer:E" 2>/dev/null | tail -20
+    info "Recent Python tracebacks (adb):"
+    adb -s "$DEVICE" logcat -d 2>/dev/null | grep -iE "(Traceback|Error|Exception)" | tail -20
+    rm -f "$DASHBOARD_BODY_FILE"
     fail "Dashboard health check failed."
 fi
+rm -f "$DASHBOARD_BODY_FILE"
 
 # ── step 8 — check logcat for crashes ────────────────────────
 CRASH_COUNT=$(adb -s "$DEVICE" logcat -d -b crash 2>/dev/null | grep -c "${APP_ID}" || true)
