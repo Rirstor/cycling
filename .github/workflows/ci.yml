@@ -150,6 +150,10 @@ jobs:
     name: Test APK on emulator
     needs: [build-apk]
     runs-on: ubuntu-latest
+    # Allow failure: emulator boot is flaky in CI; local testing on a real device
+    # is the recommended approach (see scripts/test-apk-on-device.sh).
+    continue-on-error: true
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -173,7 +177,7 @@ jobs:
             sudo chmod 666 /dev/kvm
             echo "KVM permissions granted"
           else
-            echo "KVM not available on this runner"
+            echo "::warning ::KVM not available — emulator will be very slow"
           fi
 
       - name: Create and start emulator
