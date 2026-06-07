@@ -12,6 +12,7 @@ from typing import Any
 
 import pytest
 from appium import webdriver
+from appium.options.android import UiAutomator2Options
 from appium.webdriver.common.appiumby import AppiumBy
 
 APPIUM_HOST = os.environ.get("APPIUM_HOST", "localhost")
@@ -20,17 +21,17 @@ APK_PATH = os.environ.get("APK_PATH", "/apk/app-debug.apk")
 
 @pytest.fixture(scope="module")
 def driver() -> Any:
-    caps: dict[str, Any] = {
-        "platformName": "Android",
-        "appium:automationName": "UiAutomator2",
-        "appium:deviceName": "emulator-5554",
-        "appium:app": APK_PATH,
-        "appium:autoGrantPermissions": True,
-        "appium:noReset": False,
-        "appium:ensureWebviewsHavePages": True,
-    }
+    options = UiAutomator2Options()
+    options.platform_name = "Android"
+    options.automation_name = "UiAutomator2"
+    options.device_name = "emulator-5554"
+    options.app = APK_PATH
+    options.auto_grant_permissions = True
+    options.no_reset = False
+    options.ensure_webviews_have_pages = True
+
     driver = webdriver.Remote(
-        f"http://{APPIUM_HOST}:4723", caps
+        f"http://{APPIUM_HOST}:4723", options=options
     )
     yield driver
     driver.quit()
