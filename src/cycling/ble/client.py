@@ -3,9 +3,12 @@ from __future__ import annotations
 import asyncio
 import struct
 from datetime import datetime
-from typing import Any, AsyncIterator, Optional
+from typing import TYPE_CHECKING, Any, AsyncIterator, Optional
 
 from cycling.ble.protocol import BleClientProtocol
+
+if TYPE_CHECKING:
+    from bleak import BleakClient
 from cycling.data.models import CyclingRecord
 
 FTMS_SERVICE_UUID = "00001826-0000-1000-8000-00805f9b34fb"
