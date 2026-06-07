@@ -59,6 +59,12 @@ chaquopy {
     }
 }
 
+tasks.register<Copy>("copyPythonSource") {
+    from("${rootProject.projectDir}/../src/cycling")
+    into("src/main/python/cycling")
+}
+tasks.named("preBuild") { dependsOn("copyPythonSource") }
+
 dependencies {
     implementation("androidx.webkit:webkit:1.10.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")

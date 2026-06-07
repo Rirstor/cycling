@@ -41,6 +41,15 @@ if [ "${1:-}" = "--skip-build" ]; then
     info "Using existing APK: ${APK_PATH}"
 else
     info "Building APK ..."
+
+    # Copy Python source into Chaquopy source dir (like CI step does)
+    PYTHON_SRC_DIR="${SCRIPT_DIR}/android/app/src/main/python"
+    if [ ! -d "${PYTHON_SRC_DIR}/cycling" ]; then
+        info "Copying Python source to Chaquopy source dir ..."
+        mkdir -p "$PYTHON_SRC_DIR"
+        cp -r "${SCRIPT_DIR}/src/cycling" "${PYTHON_SRC_DIR}/"
+    fi
+
     cmd "${SCRIPT_DIR}/android/gradlew" -p "${SCRIPT_DIR}/android" assembleDebug --stacktrace --no-daemon
     if [ ! -f "$APK_PATH" ]; then
         fail "APK was not produced at ${APK_PATH}."
