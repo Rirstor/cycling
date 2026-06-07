@@ -47,7 +47,7 @@ android {
 
 chaquopy {
     defaultConfig {
-        buildPython("/usr/bin/python3")
+        version = "3.11"
         pip {
             install(".")
         }
