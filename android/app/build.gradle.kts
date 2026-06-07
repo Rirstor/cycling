@@ -20,13 +20,6 @@ android {
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")
         }
-
-        python {
-            buildPython("/usr/bin/python3")
-            pip {
-                install(".")
-            }
-        }
     }
 
     buildTypes {
@@ -49,6 +42,15 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+    }
+}
+
+chaquopy {
+    defaultConfig {
+        buildPython("/usr/bin/python3")
+        pip {
+            install(".")
+        }
     }
 }
 
