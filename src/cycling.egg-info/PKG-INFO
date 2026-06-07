@@ -10,6 +10,7 @@ Requires-Dist: typer>=0.12.0
 Provides-Extra: dev
 Requires-Dist: pytest>=8.0; extra == "dev"
 Requires-Dist: pytest-asyncio>=0.24; extra == "dev"
+Requires-Dist: pytest-cov>=5.0; extra == "dev"
 Provides-Extra: web
 Requires-Dist: fastapi>=0.115.0; extra == "web"
 Requires-Dist: uvicorn[standard]>=0.34.0; extra == "web"

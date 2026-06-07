@@ -131,12 +131,10 @@ jobs:
             "ndk;26.1.10909125" \
             || true
 
-      - name: Build Python wheel
+      - name: Copy Python source to Chaquopy source dir
         run: |
-          pip install build
-          python -m build --wheel
-          mkdir -p android/dist
-          cp dist/cycling-0.1.0-py3-none-any.whl android/dist/
+          mkdir -p android/app/src/main/python
+          cp -r src/cycling android/app/src/main/python/
 
       - name: Build APK
         run: |

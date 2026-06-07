@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Optional
-
-from bleak import BleakScanner
-from bleak.backends.device import BLEDevice
-from bleak.backends.scanner import AdvertisementData
+from typing import TYPE_CHECKING, Optional
 
 from cycling.ble.registry import save_scanned_devices
+
+if TYPE_CHECKING:
+    from bleak.backends.device import BLEDevice
+    from bleak.backends.scanner import AdvertisementData
 
 SERVICE_UUIDS = {
     "00001826-0000-1000-8000-00805f9b34fb": "Fitness Machine (FTMS)",
@@ -33,6 +33,7 @@ def is_cycling_device(device: BLEDevice, adv_data: AdvertisementData | None = No
 
 
 async def scan_devices(timeout: int = 10, cycling_only: bool = True) -> list[dict]:
+    from bleak import BleakScanner
     try:
         devices = await BleakScanner.discover(timeout=timeout, return_adv=True)
     except Exception as e:
@@ -69,6 +70,7 @@ async def scan_devices(timeout: int = 10, cycling_only: bool = True) -> list[dic
 
 
 async def get_device_by_address(address: str) -> Optional[BLEDevice]:
+    from bleak import BleakScanner
     devices = await BleakScanner.discover(timeout=5)
     for d in devices:
         if d.address.upper() == address.upper():

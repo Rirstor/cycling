@@ -5,8 +5,6 @@ import struct
 from datetime import datetime
 from typing import Any, AsyncIterator, Optional
 
-from bleak import BleakClient
-
 from cycling.ble.protocol import BleClientProtocol
 from cycling.data.models import CyclingRecord
 
@@ -81,6 +79,8 @@ class CyclingClient(BleClientProtocol):
         self._hr_address: str = ""
 
     async def connect(self, trainer_address: str, hr_address: Optional[str] = None, timeout: float = 10.0) -> None:
+        from bleak import BleakClient
+
         self._trainer_address = trainer_address
         self._hr_address = hr_address or ""
         self._trainer_client = BleakClient(trainer_address, disconnected_callback=self._on_disconnect)
