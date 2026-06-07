@@ -210,13 +210,30 @@ jobs:
             # Wait for Python server to start (waitForReady timeout is 15s)
             sleep 20
 
-            # Verify app is running via logcat
+            # Verify Python server started
             adb logcat -d -s PythonServer:I | head -30
-            adb logcat -d -s "PythonServer" | grep -q "Server ready" && echo "Server started" || echo "Server check: $(adb logcat -d -s PythonServer:I 2>&1 | tail -10)"
+            if adb logcat -d -s "PythonServer" | grep -q "Server ready"; then
+              echo "::notice ::Python server started successfully"
+            else
+              echo "::error ::Python server did not start"
+              adb logcat -d -s "*:E" | head -30
+              exit 1
+            fi
+
+            # Install Appium
+            npm install -g appium@2
+            appium driver install uiautomator2
+            appium &
+            APPIUM_PID=$!
+            echo "Appium PID: $APPIUM_PID"
+            sleep 5
 
             # Run Appium tests
             pip install --quiet appium-python-client pytest
-            python tests/android/test_live_dashboard.py
+            python -m pytest tests/android/test_live_dashboard.py -v 2>&1
+            APPIUM_EXIT=$?
+            kill $APPIUM_PID 2>/dev/null || true
+            exit $APPIUM_EXIT
 
   deploy:
     name: Deploy APK to release
