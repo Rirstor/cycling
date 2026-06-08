@@ -49,6 +49,110 @@
 
         /* Prevent scroll interference on chart canvas */
         #workout-chart { touch-action: none; }
+
+        /* ── Mobile Dashboard Layout ── */
+        body[data-dashboard-active="true"] nav { display: none; }
+        body[data-dashboard-active="true"] main.container {
+            padding-top: 0; padding-bottom: 0;
+            max-width: 100%;
+        }
+
+        #dashboard { display: none; }
+        #dashboard.active {
+            display: flex; flex-direction: column; gap: 0.4rem;
+            padding: 0.4rem; padding-bottom: 64px;
+            height: calc(100dvh - 0.8rem);
+            box-sizing: border-box;
+        }
+        .routine-selector {
+            background: #1a1a2e; border-radius: 12px; padding: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .routine-selector-header { font-weight: 700; margin-bottom: 0.5rem; }
+        .routine-grid { display: grid; grid-template-columns: 1fr; gap: 0.5rem; }
+        .routine-name-bar {
+            display: none; justify-content: space-between; align-items: center;
+            padding: 0.3rem 0.6rem; background: #1a1a2e; border-radius: 8px;
+            font-size: 0.85rem; font-weight: 600;
+        }
+
+        /* Row 1: Timers */
+        .timer-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+        .timer-box {
+            background: #1a1a2e; border-radius: 10px; padding: 0.5rem;
+            text-align: center;
+        }
+        .timer-label { font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+        .timer-value { font-size: 1.8rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; }
+
+        /* Row 2: Metrics */
+        .metrics-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+        .metric-box {
+            background: #1a1a2e; border-radius: 10px; padding: 0.6rem;
+            text-align: center;
+        }
+        .metric-value { font-size: 2rem; font-weight: 700; line-height: 1.2; }
+        .metric-unit { font-size: 0.7rem; color: #888; display: block; margin-top: 0.1rem; }
+
+        /* Row 3: Target + Speed */
+        .target-row {
+            background: #1a1a2e; border-radius: 10px; padding: 0.6rem 0.8rem;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .target-main { display: flex; align-items: baseline; gap: 0.3rem; flex-wrap: wrap; }
+        .target-label { font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+        .target-watts { font-size: 2.2rem; font-weight: 700; line-height: 1.1; }
+        .target-unit { font-size: 0.85rem; color: #888; }
+        .target-delta { font-size: 1rem; font-weight: 700; margin-left: 0.3rem; }
+        .target-delta.on-target  { color: #00cc66; }
+        .target-delta.off-target { color: #ff3333; }
+        .speed-display { text-align: right; }
+        .speed-value { font-size: 1.6rem; font-weight: 700; line-height: 1.1; }
+        .speed-unit { font-size: 0.7rem; color: #888; display: block; }
+
+        /* Row 4: Chart */
+        .chart-area { flex: 1; min-height: 80px; background: #1a1a2e; border-radius: 10px; overflow: hidden; }
+        #workout-chart { width: 100%; height: 100%; display: block; }
+
+        /* Bottom: action bar */
+        .action-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            display: flex; gap: 0.3rem; padding: 0.5rem;
+            background: #0d0d1a; border-top: 1px solid #2a2a3e;
+            z-index: 100;
+        }
+        .action-btn {
+            flex: 1; font-size: 0.8rem; padding: 0.5rem 0.2rem;
+            border-radius: 8px; border: none; font-weight: 600;
+            background: #2a2a3e; color: #fff; cursor: pointer;
+        }
+        .action-btn.primary { background: #00cc66; color: #000; }
+        .action-btn.danger   { background: #ff3333; color: #fff; }
+
+        .routine-grid > :not(:first-child) { margin-top: 0.4rem; }
+        .sec-btn {
+            width: 100%; padding: 0.5rem; border-radius: 8px; border: none;
+            background: #2a2a3e; color: #fff; font-size: 0.85rem; cursor: pointer;
+        }
+
+        /* ── Landscape ── */
+        @media (orientation: landscape) {
+            #dashboard.active {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto 1fr auto;
+                gap: 0.4rem;
+                padding: 0.4rem;
+                height: calc(100dvh - 0.8rem);
+                box-sizing: border-box;
+            }
+            .timer-row     { grid-column: 1; grid-row: 1; }
+            .metrics-row   { grid-column: 1; grid-row: 2; }
+            .target-row    { grid-column: 1; grid-row: 3; }
+            .chart-area    { grid-column: 2; grid-row: 1 / 4; min-height: 0; }
+            .action-bar    { grid-column: 1 / 3; grid-row: 4; position: static; }
+            .routine-name-bar { grid-column: 1 / 3; }
+        }
     </style>
 </head>
 <body>

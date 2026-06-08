@@ -48,7 +48,10 @@ class BleManager(private val context: Context) {
     }
 
     fun startScanning() {
-        if (bleScanner == null) return
+        if (bleScanner == null) {
+            Log.w(TAG, "bleScanner is null — Bluetooth may be off")
+            return
+        }
 
         val settings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
@@ -57,16 +60,32 @@ class BleManager(private val context: Context) {
         scanCallback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
                 val device = result.device
-                val name = device.name ?: return
+                val name = device.name ?: "Unknown"
                 val rssi = result.rssi
+                Log.v(TAG, "Scan result: $name (${device.address}) RSSI=$rssi")
                 if (isCyclingDevice(name, result)) {
                     BleBridge.onDeviceFound(device.address, name, rssi)
                 }
             }
+
+            override fun onScanFailed(errorCode: Int) {
+                val reason = when (errorCode) {
+                    SCAN_FAILED_ALREADY_STARTED -> "Scan already started"
+                    SCAN_FAILED_APPLICATION_REGISTRATION_FAILED -> "App registration failed"
+                    SCAN_FAILED_FEATURE_UNSUPPORTED -> "Feature unsupported"
+                    SCAN_FAILED_INTERNAL_ERROR -> "Internal error"
+                    else -> "Unknown error ($errorCode)"
+                }
+                Log.e(TAG, "BLE scan failed: $reason")
+            }
         }
 
-        bleScanner.startScan(null, settings, scanCallback)
-        Log.i(TAG, "BLE scanning started (unfiltered)")
+        try {
+            bleScanner.startScan(null, settings, scanCallback)
+            Log.i(TAG, "BLE scanning started (unfiltered)")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start BLE scan", e)
+        }
     }
 
     private fun isCyclingDevice(name: String, result: ScanResult): Boolean {
@@ -74,19 +93,19 @@ class BleManager(private val context: Context) {
         val cyclingKeywords = listOf(
             "kickr", "tacx", "neo", "suito", "wahoo", "elite",
             "zwift", "hub", "hammer", "h3", "flux", "snap",
-            "dragon", "stages", "garmin", "assist"
+            "dragon", "stages", "garmin", "assist", "jfic"
         )
         if (cyclingKeywords.any { lower.contains(it) }) return true
 
         val serviceUuids = result.scanRecord?.serviceUuids ?: return false
         val cyclingServiceUuids = setOf(
-            UUID.fromString("00001826-0000-1000-8000-00805f9b34fb"),
-            UUID.fromString("00001818-0000-1000-8000-00805f9b34fb"),
-            UUID.fromString("00001816-0000-1000-8000-00805f9b34fb"),
-            UUID.fromString("0000180d-0000-1000-8000-00805f9b34fb"),
-            UUID.fromString("0000180f-0000-1000-8000-00805f9b34fb"),
+            "00001826-0000-1000-8000-00805f9b34fb",
+            "00001818-0000-1000-8000-00805f9b34fb",
+            "00001816-0000-1000-8000-00805f9b34fb",
+            "0000180d-0000-1000-8000-00805f9b34fb",
+            "0000180f-0000-1000-8000-00805f9b34fb",
         )
-        return serviceUuids.any { it in cyclingServiceUuids }
+        return serviceUuids.any { it.uuid.toString().lowercase() in cyclingServiceUuids }
     }
 
     fun stopScanning() {

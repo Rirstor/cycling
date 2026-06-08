@@ -1,38 +1,58 @@
 from __future__ import annotations
 
 import asyncio
+import importlib.util
 import json
+import os
+import sys
 from typing import Any, Optional
 
 ble_data_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
 device_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
 _connected: bool = False
 _device_name: str = ""
+_loop: asyncio.AbstractEventLoop | None = None
+_device_buffer: list[dict[str, Any]] = []
+connect_event: asyncio.Event | None = None
+
+
+def _is_android() -> bool:
+    return (
+        importlib.util.find_spec("java") is not None
+        or getattr(sys, "platform", "") == "android"
+        or "ANDROID_BOOT" in os.environ
+    )
+
+
+def set_event_loop(loop: asyncio.AbstractEventLoop) -> None:
+    global _loop, connect_event
+    _loop = loop
+    connect_event = asyncio.Event()
+    for item in _device_buffer:
+        _loop.call_soon_threadsafe(lambda d=item: device_queue.put_nowait(d))
+    _device_buffer.clear()
 
 
 def push_ble_data(json_str: str) -> None:
-    """Called from Kotlin via JNI on each BLE notification.
-
-    The JSON string is a flat dict of parsed FTMS Indoor Bike Data fields.
-    """
     data = json.loads(json_str)
-    loop = asyncio.get_event_loop()
-    if loop.is_running():
-        loop.call_soon_threadsafe(lambda: ble_data_queue.put_nowait(data))
+    if _loop is not None:
+        _loop.call_soon_threadsafe(lambda: ble_data_queue.put_nowait(data))
 
 
 def push_device(address: str, name: str, rssi: int) -> None:
-    """Called from Kotlin when BLE scan finds a cycling device."""
     data = {"address": address, "name": name, "rssi": rssi}
-    loop = asyncio.get_event_loop()
-    if loop.is_running():
-        loop.call_soon_threadsafe(lambda: device_queue.put_nowait(data))
+    if _loop is not None:
+        _loop.call_soon_threadsafe(lambda: device_queue.put_nowait(data))
+    else:
+        _device_buffer.append(data)
 
 
 def set_connected(device_name: str) -> None:
     global _connected, _device_name
     _connected = True
     _device_name = device_name
+    if _loop is not None and connect_event is not None:
+        _loop.call_soon_threadsafe(connect_event.set)
 
 
 def set_disconnected() -> None:
@@ -49,10 +69,22 @@ def get_connected_name() -> str:
 
 
 async def connect_device(address: str, hr_address: Optional[str] = None) -> None:
-    """Reserved for future use; the Kotlin side handles connections directly."""
-    pass
+    if connect_event is None:
+        raise RuntimeError("Bridge not initialized (set_event_loop not called)")
+    connect_event.clear()
+    try:
+        from java import jclass
+        BleBridge = jclass("com.cycling.app.BleBridge")
+        BleBridge.connectToDevice(address, hr_address)
+    except ImportError:
+        pass
+    await asyncio.wait_for(connect_event.wait(), timeout=10.0)
 
 
 async def disconnect_device() -> None:
-    """Reserved for future use; the Kotlin side handles disconnections directly."""
-    pass
+    try:
+        from java import jclass
+        BleBridge = jclass("com.cycling.app.BleBridge")
+        BleBridge.disconnectFromDevice()
+    except ImportError:
+        pass

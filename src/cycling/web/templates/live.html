@@ -30,119 +30,61 @@
 </div>
 
 <div id="dashboard" style="display:none;">
-    <div id="routine-selector" style="display:none; margin-bottom:1rem;">
-        <article>
-            <header style="font-weight:bold;">Select Routine</header>
-            <p style="font-size:0.85rem; color:var(--pico-muted-color); margin-bottom:0.5rem;">Choose a structured workout or ride freely without a routine.</p>
-            <div class="device-grid" id="routine-grid"></div>
-            <button id="no-routine-btn" class="secondary" onclick="startNoRoutine()" style="margin-top:0.5rem;">Ride Freely (No Routine)</button>
-        </article>
+    <div id="routine-selector" class="routine-selector">
+        <div class="routine-selector-header">Select Routine</div>
+        <div class="routine-grid" id="routine-grid"></div>
+        <button id="no-routine-btn" class="sec-btn" onclick="startNoRoutine()" style="margin-top:0.5rem;">Ride Freely</button>
     </div>
 
-    <div id="routine-info" style="display:none; margin-bottom:1rem;">
-        <article style="padding:0.5rem 1rem;">
-            <div class="control-bar">
-                <span style="font-weight:bold;" id="routine-name-display"></span>
-                <span id="routine-status-badge" style="margin-left:0.5rem;"></span>
-                <span style="margin-left:auto; display:flex; gap:0.3rem;">
-                    <button id="routine-play-btn" class="primary" onclick="toggleRoutinePlay()" style="padding:0.2rem 0.8rem;">Play</button>
-                    <button id="routine-stop-btn" class="secondary" onclick="stopRoutine()" style="padding:0.2rem 0.8rem;">Stop</button>
-                    <button id="routine-close-btn" class="secondary" onclick="closeRoutine()" style="padding:0.2rem 0.8rem;">Change</button>
-                </span>
-            </div>
-            <div style="display:flex; gap:1rem; margin-top:0.5rem; font-size:0.85rem; flex-wrap:wrap;">
-                <span id="routine-segment-info">Segment: --/--</span>
-                <span id="routine-segment-desc" style="color:var(--pico-muted-color);"></span>
-                <span id="routine-segment-time">Time left: --:--</span>
-                <span id="routine-total-progress">Total: --%</span>
-            </div>
-        </article>
+    <div id="routine-name-bar" class="routine-name-bar">
+        <span id="routine-name-display"></span>
+        <span id="routine-status-badge"></span>
     </div>
 
-    <div class="dashboard-grid" id="top-grid">
-        <article id="power-card">
-            <header style="text-align:center;">Power (W)</header>
-            <p class="value-display" id="power-val">--</p>
-            <p style="text-align:center; font-size:0.85rem;" id="power-target-display"></p>
-        </article>
-        <article id="hr-card">
-            <header style="text-align:center;">Heart Rate</header>
-            <p class="value-display" id="hr-val">--</p>
-        </article>
-        <article id="cadence-card">
-            <header style="text-align:center;">Cadence (RPM)</header>
-            <p class="value-display" id="cadence-val">--</p>
-            <p style="text-align:center; font-size:0.85rem;" id="cadence-target-display"></p>
-        </article>
-        <article>
-            <header style="text-align:center;" id="zone-header">Zone</header>
-            <p class="value-display" id="zone-val">--</p>
-            <p class="zone-label" id="zone-name">--</p>
-        </article>
-    </div>
-
-    <div class="middle-grid">
-        <article>
-            <header>Power (% FTP)</header>
-            <progress id="power-pct-bar" value="0" max="200"></progress>
-            <p style="text-align:center; font-size:1.5rem; font-weight:bold;" id="power-pct-text">0%</p>
-        </article>
-        <article>
-            <header>Session Time</header>
-            <p style="text-align:center; font-size:2rem; font-weight:bold;" id="elapsed-val">00:00</p>
-        </article>
-    </div>
-
-    <div class="bottom-grid" style="grid-template-columns: 1fr 1.5fr;">
-        <div>
-            <article>
-                <header>Session Averages</header>
-                <table>
-                    <tr><td>Avg Power</td><td id="avg-power">--</td></tr>
-                    <tr><td>Avg HR</td><td id="avg-hr">--</td></tr>
-                    <tr><td>Avg Cadence</td><td id="avg-cad">--</td></tr>
-                </table>
-            </article>
-            <article>
-                <header>Time in Zones</header>
-                <div id="time-in-zones">
-                    <table>
-                        <thead><tr><th>Zone</th><th>Time</th></tr></thead>
-                        <tbody>
-                            {% for zd in zone_defs %}
-                            <tr>
-                                <td>{{ zd.name }}</td>
-                                <td id="zone-{{ zd.zone }}-time">0s</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </article>
+    <div class="timer-row">
+        <div class="timer-box">
+            <span class="timer-label">Segment</span>
+            <span class="timer-value" id="segment-time">--:--</span>
         </div>
-        <article id="chart-container">
-            <header style="display:flex; justify-content:space-between; align-items:center;">
-                <span>Workout Profile</span>
-                <span style="display:flex; gap:0.3rem;">
-                    <button class="secondary" style="padding:0.1rem 0.4rem; font-size:0.8rem;" onclick="zoomChartIn()">+</button>
-                    <button class="secondary" style="padding:0.1rem 0.4rem; font-size:0.8rem;" onclick="zoomChartOut()">-</button>
-                    <button class="secondary" style="padding:0.1rem 0.4rem; font-size:0.8rem;" onclick="resetChartView()">Fit</button>
-                </span>
-            </header>
-            <div style="position:relative;">
-                <canvas id="workout-chart" style="width:100%; height:250px; cursor:grab;"></canvas>
-                <div id="chart-mini-overview" style="margin-top:4px; height:24px; position:relative; background:#1a1a2e; border-radius:4px; overflow:hidden;">
-                    <canvas id="chart-mini-canvas" style="width:100%; height:24px;"></canvas>
-                    <div id="chart-viewport-indicator" style="position:absolute; top:0; height:24px; border:1px solid rgba(255,255,255,0.5); background:rgba(255,255,255,0.1); pointer-events:none; border-radius:2px;"></div>
-                </div>
-                <p style="text-align:center; font-size:0.75rem; color:var(--pico-muted-color); margin-top:2px;">Scroll to zoom, drag to pan</p>
-            </div>
-        </article>
+        <div class="timer-box">
+            <span class="timer-label">Total</span>
+            <span class="timer-value" id="total-time">00:00</span>
+        </div>
     </div>
 
-    <div class="control-bar">
-        <button id="disconnect-btn" class="secondary" onclick="disconnectTrainer()">Disconnect</button>
-        <button id="record-btn" class="primary" onclick="toggleRecording()">Start Recording</button>
+    <div class="metrics-row">
+        <div class="metric-box" id="cadence-box">
+            <span class="metric-value" id="cadence-val">--</span>
+            <span class="metric-unit">RPM</span>
+        </div>
+        <div class="metric-box" id="hr-box">
+            <span class="metric-value" id="hr-val">--</span>
+            <span class="metric-unit">BPM</span>
+        </div>
+    </div>
+
+    <div class="target-row" id="target-row">
+        <div class="target-main">
+            <span class="target-label">Target</span>
+            <span class="target-watts" id="target-power">--</span>
+            <span class="target-unit">W</span>
+            <span class="target-delta" id="target-delta"></span>
+        </div>
+        <div class="speed-display">
+            <span class="speed-value" id="speed-val">--</span>
+            <span class="speed-unit">km/h</span>
+        </div>
+    </div>
+
+    <div class="chart-area" id="chart-area">
+        <canvas id="workout-chart"></canvas>
+    </div>
+
+    <div class="action-bar">
+        <button id="routine-play-btn" class="action-btn primary" onclick="toggleRoutinePlay()">&#9654; Play</button>
+        <button id="routine-change-btn" class="action-btn" onclick="closeRoutine()">Change</button>
+        <button id="record-btn" class="action-btn" onclick="toggleRecording()">&#9679; Rec</button>
+        <button id="disconnect-btn" class="action-btn danger" onclick="disconnectTrainer()">X</button>
     </div>
 </div>
 
@@ -215,17 +157,16 @@ function connectToDevice(address) {
             if (data.status === 'ok') {
                 if (deviceSSE) { deviceSSE.close(); deviceSSE = null; }
                 document.getElementById('device-list-view').style.display = 'none';
-                document.getElementById('dashboard').style.display = 'block';
-                document.getElementById('connected-name').style.display = 'inline';
-                document.getElementById('connected-name').textContent = address;
+                document.getElementById('dashboard').classList.add('active');
+                document.body.dataset.dashboardActive = 'true';
+                document.getElementById('status-text').textContent = 'Connected';
+                document.getElementById('status-dot').className = 'status-dot on';
                 loadRoutines();
                 startLiveSSE();
-                // Redraw chart now that the canvas is visible with proper dimensions
                 setTimeout(function() {
                     viewStart = 0;
                     viewEnd = chartTotalDuration || 600;
                     drawChart();
-                    drawMiniChart();
                 }, 50);
             } else {
                 document.getElementById('status-text').textContent = 'Error: ' + data.message;
@@ -247,6 +188,88 @@ function loadRoutines() {
             document.getElementById('routine-selector').style.display = 'block';
         });
 }
+
+function selectRoutine(name) {
+    selectedRoutine = routines.find(function(r) { return r.name === name; });
+    if (!selectedRoutine) return;
+    document.getElementById('routine-selector').style.display = 'none';
+    document.getElementById('routine-name-bar').style.display = 'flex';
+    document.getElementById('routine-name-display').textContent = selectedRoutine.name.replace(/_/g,' ');
+    document.getElementById('routine-status-badge').textContent = 'Ready';
+
+    fetch('/api/routine/preview/' + encodeURIComponent(name))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            chartProfile = data.profile || [];
+            chartTotalDuration = data.total_duration || 0;
+            chartActuals = [];
+            viewStart = 0;
+            viewEnd = chartTotalDuration || 600;
+            drawChart();
+        });
+}
+
+function startNoRoutine() {
+    selectedRoutine = null;
+    document.getElementById('routine-selector').style.display = 'none';
+    document.getElementById('routine-name-bar').style.display = 'none';
+    chartProfile = [];
+    chartActuals = [];
+    chartTotalDuration = 0;
+    viewStart = 0;
+    viewEnd = 600;
+    drawChart();
+}
+
+function closeRoutine() {
+    if (routineActive) {
+        fetch('/api/routine/stop', { method: 'POST' });
+        routineActive = false;
+    }
+    document.getElementById('routine-selector').style.display = 'block';
+}
+
+function toggleRoutinePlay() {
+    if (!selectedRoutine) return;
+    const btn = document.getElementById('routine-play-btn');
+    if (btn.textContent.includes('Play') || btn.textContent.includes('Resume')) {
+        const formData = new FormData();
+        formData.append('name', selectedRoutine.name);
+        fetch('/api/routine/start', { method: 'POST', body: formData })
+            .then(function(r) { return r.json(); }).then(function(data) {
+            if (data.status === 'ok') {
+                btn.innerHTML = '&#10074;&#10074; Pause';
+                routineActive = true;
+                document.getElementById('routine-status-badge').textContent = 'Active';
+                fetch('/api/routine/profile')
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        chartProfile = data.profile || [];
+                        chartTotalDuration = data.total_duration || 0;
+                        chartActuals = data.actuals || [];
+                        viewStart = 0;
+                        viewEnd = chartTotalDuration || 600;
+                        drawChart();
+                    });
+            }
+        });
+    } else {
+        fetch('/api/routine/pause', { method: 'POST' })
+            .then(function(r) { return r.json(); }).then(function() {
+                btn.innerHTML = '&#9654; Resume';
+                document.getElementById('routine-status-badge').textContent = 'Paused';
+            });
+    }
+}
+
+function stopRoutine() {
+    fetch('/api/routine/stop', { method: 'POST' });
+    document.getElementById('routine-play-btn').innerHTML = '&#9654; Play';
+    document.getElementById('routine-status-badge').textContent = 'Stopped';
+    routineActive = false;
+}
+
+// Chart functions
 
 function drawMiniRoutineChart(canvas, profile, duration) {
     if (!canvas || !profile || profile.length < 2) return;
@@ -326,118 +349,28 @@ function renderRoutineGrid() {
     }, 50);
 }
 
-function selectRoutine(name) {
-    selectedRoutine = routines.find(function(r) { return r.name === name; });
-    if (!selectedRoutine) return;
-    document.getElementById('routine-selector').style.display = 'none';
-    document.getElementById('routine-info').style.display = 'block';
-    document.getElementById('routine-name-display').textContent = selectedRoutine.name.replace(/_/g,' ');
-    document.getElementById('routine-status-badge').textContent = 'Ready';
-    document.getElementById('routine-status-badge').style.color = 'var(--pico-color-green-500)';
-    document.getElementById('routine-segment-info').textContent = 'Segment: 0/' + selectedRoutine.segment_count;
-    document.getElementById('routine-segment-desc').textContent = 'Press Play to start';
-    document.getElementById('routine-segment-time').textContent = 'Time left: --:--';
-    document.getElementById('routine-total-progress').textContent = 'Total: 0%';
-    document.getElementById('routine-play-btn').textContent = 'Play';
-    routineActive = false;
-
-    // Preview the routine profile on the chart
-    fetch('/api/routine/preview/' + encodeURIComponent(name))
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            chartProfile = data.profile || [];
-            chartTotalDuration = data.total_duration || 0;
-            chartActuals = [];
-            viewStart = 0;
-            viewEnd = chartTotalDuration || 600;
-            drawChart();
-            drawMiniChart();
-        });
-}
-
-function startNoRoutine() {
-    selectedRoutine = null;
-    document.getElementById('routine-selector').style.display = 'none';
-    document.getElementById('routine-info').style.display = 'none';
-    // Clear the chart for free riding
-    chartProfile = [];
-    chartActuals = [];
-    chartTotalDuration = 0;
-    viewStart = 0;
-    viewEnd = 600;
-    drawChart();
-    drawMiniChart();
-}
-
-function closeRoutine() {
-    stopRoutine();
-    document.getElementById('routine-info').style.display = 'none';
-    document.getElementById('routine-selector').style.display = 'block';
-}
-
-function toggleRoutinePlay() {
-    if (!selectedRoutine) return;
-    const btn = document.getElementById('routine-play-btn');
-    if (btn.textContent === 'Play' || btn.textContent === 'Resume') {
-        const formData = new FormData();
-        formData.append('name', selectedRoutine.name);
-        fetch('/api/routine/start', { method: 'POST', body: formData })
-            .then(function(r) { return r.json(); }).then(function(data) {
-            if (data.status === 'ok') {
-                btn.textContent = 'Pause';
-                routineActive = true;
-                document.getElementById('routine-status-badge').textContent = 'Active';
-                document.getElementById('routine-status-badge').style.color = 'var(--pico-color-green-500)';
-                fetchChartProfile();
-            }
-        });
-    } else if (btn.textContent === 'Pause') {
-        fetch('/api/routine/pause', { method: 'POST' })
-            .then(function(r) { return r.json(); }).then(function() {
-                btn.textContent = 'Resume';
-                document.getElementById('routine-status-badge').textContent = 'Paused';
-                document.getElementById('routine-status-badge').style.color = 'var(--pico-color-yellow-500)';
-            });
-    }
-}
-
-function stopRoutine() {
-    fetch('/api/routine/stop', { method: 'POST' });
-    document.getElementById('routine-play-btn').textContent = 'Play';
-    document.getElementById('routine-status-badge').textContent = 'Stopped';
-    document.getElementById('routine-status-badge').style.color = 'var(--pico-color-red-500)';
-    routineActive = false;
-}
-
-function fetchChartProfile() {
-    fetch('/api/routine/profile')
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            chartProfile = data.profile || [];
-            chartTotalDuration = data.total_duration || 0;
-            chartActuals = data.actuals || [];
-            viewStart = 0;
-            viewEnd = chartTotalDuration || 600;
-            drawChart();
-            drawMiniChart();
-        });
-}
-
 function disconnectTrainer() {
     fetch('/api/disconnect', { method: 'POST' })
         .then(function(r) { return r.json(); })
         .then(function() {
             if (liveSSE) { liveSSE.close(); liveSSE = null; }
-            document.getElementById('dashboard').style.display = 'none';
-            document.getElementById('connected-name').style.display = 'none';
-            document.getElementById('connected-name').textContent = '';
+            document.getElementById('dashboard').classList.remove('active');
+            document.body.dataset.dashboardActive = 'false';
             document.getElementById('device-list-view').style.display = 'block';
-            document.getElementById('routine-selector').style.display = 'none';
-            document.getElementById('routine-info').style.display = 'none';
             document.getElementById('status-text').textContent = 'Disconnected';
             document.getElementById('status-dot').className = 'status-dot off';
+            chartProfile = [];
+            chartActuals = [];
+            chartTotalDuration = 0;
             startDeviceSSE();
         });
+}
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+
+function formatDuration(seconds) {
+    if (seconds == null || seconds < 0) return '--:--';
+    return pad2(Math.floor(seconds / 60)) + ':' + pad2(Math.floor(seconds % 60));
 }
 
 function startLiveSSE() {
@@ -448,6 +381,74 @@ function startLiveSSE() {
         updateDashboard(data);
     };
     liveSSE.onerror = function() {};
+}
+
+function updateDashboard(data) {
+    // Row 1: Timers
+    const remain = data.routine_active ? (data.segment_time_remaining || 0) : 0;
+    document.getElementById('segment-time').textContent = formatDuration(remain);
+    document.getElementById('total-time').textContent = formatDuration(data.elapsed);
+
+    // Row 2: RPM & HR
+    document.getElementById('cadence-val').textContent = data.cadence_rpm != null ? data.cadence_rpm.toFixed(0) : '--';
+    document.getElementById('hr-val').textContent = data.heart_rate_bpm != null ? data.heart_rate_bpm.toFixed(0) : '--';
+
+    // Row 3: Target + Delta + Speed
+    const targetPowerEl = document.getElementById('target-power');
+    const targetDeltaEl = document.getElementById('target-delta');
+    if (data.routine_active && data.target_power != null) {
+        targetPowerEl.textContent = data.target_power.toFixed(0);
+        if (data.power_watts != null) {
+            const delta = data.power_watts - data.target_power;
+            const sign = delta >= 0 ? '▲' : '▼';
+            targetDeltaEl.textContent = sign + Math.abs(delta).toFixed(0) + 'W';
+            targetDeltaEl.className = 'target-delta ' + (Math.abs(delta) <= 10 ? 'on-target' : 'off-target');
+        } else {
+            targetDeltaEl.textContent = '';
+            targetDeltaEl.className = 'target-delta';
+        }
+    } else {
+        targetPowerEl.textContent = '--';
+        targetDeltaEl.textContent = '';
+        targetDeltaEl.className = 'target-delta';
+    }
+
+    const speed = data.speed_kph || data.theoretical_speed;
+    document.getElementById('speed-val').textContent = speed != null ? speed.toFixed(1) : '--';
+
+    // Routine info bar
+    const nameBar = document.getElementById('routine-name-bar');
+    const playBtn = document.getElementById('routine-play-btn');
+    if (data.routine_active) {
+        nameBar.style.display = 'flex';
+        document.getElementById('routine-name-display').textContent = data.routine_name || 'Workout';
+        const badge = document.getElementById('routine-status-badge');
+        if (data.routine_status === 'playing') {
+            badge.textContent = 'Active';
+            playBtn.innerHTML = '&#10074;&#10074; Pause';
+        } else if (data.routine_status === 'paused') {
+            badge.textContent = 'Paused';
+            playBtn.innerHTML = '&#9654; Resume';
+        } else if (data.routine_status === 'completed') {
+            badge.textContent = 'Completed';
+            playBtn.innerHTML = '&#9654; Play';
+        }
+    } else {
+        nameBar.style.display = 'none';
+        playBtn.innerHTML = '&#9654; Play';
+    }
+
+    // Recording button
+    const recordBtn = document.getElementById('record-btn');
+    recordBtn.innerHTML = data.recording ? '&#9632; Stop' : '&#9679; Rec';
+
+    // Update chart
+    if (data.routine_active && data.total_elapsed != null && data.power_watts != null) {
+        chartActuals.push([data.total_elapsed, data.power_watts]);
+    }
+    if (data.routine_active) {
+        drawChart();
+    }
 }
 
 function updateDashboard(data) {
@@ -567,42 +568,15 @@ function updateDashboard(data) {
     }
 }
 
-function updateChartActuals(data) {
-    if (data.power_watts != null) {
-        chartActuals.push([data.total_elapsed, data.power_watts]);
-    }
-    drawChart();
-    drawMiniChart();
-
-    // Auto-scroll to follow current position if user hasn't dragged
-    if (!isDragging && data.total_elapsed != null && chartTotalDuration > 0) {
-        const viewWindow = viewEnd - viewStart;
-        if (data.total_elapsed > viewEnd - 2 || data.total_elapsed < viewStart + 2) {
-            let center = data.total_elapsed;
-            let newStart = center - viewWindow / 2;
-            let newEnd = center + viewWindow / 2;
-            if (newStart < 0) { newEnd -= newStart; newStart = 0; }
-            if (newEnd > chartTotalDuration) { newStart -= newEnd - chartTotalDuration; newEnd = chartTotalDuration; }
-            newStart = Math.max(0, newStart);
-            if (newEnd - newStart < 30) newEnd = newStart + 30;
-            if (Math.abs(newEnd - newStart - viewWindow) > 0.5) {
-                viewStart = newStart;
-                viewEnd = newEnd;
-                drawChart();
-                updateViewportIndicator();
-            }
-        }
-    }
-}
-
-// Canvas chart functions
 function getChartCanvas() {
     const canvas = document.getElementById('workout-chart');
     if (!canvas) return null;
-    const rect = canvas.getBoundingClientRect();
-    if (rect.width === 0) return null;
-    canvas.width = rect.width;
-    canvas.height = 250;
+    const container = document.getElementById('chart-area');
+    if (!container) return null;
+    const crect = container.getBoundingClientRect();
+    if (crect.width === 0) return null;
+    canvas.width = crect.width;
+    canvas.height = crect.height;
     return canvas;
 }
 
@@ -823,182 +797,17 @@ function drawChart() {
     }
 }
 
-function drawMiniChart() {
-    const mini = document.getElementById('chart-mini-canvas');
-    if (!mini) return;
-    const rect = mini.getBoundingClientRect();
-    mini.width = rect.width || 600;
-    mini.height = 24;
-    const ctx = mini.getContext('2d');
-    const w = mini.width;
-    const h = mini.height;
 
-    ctx.clearRect(0, 0, w, h);
 
-    if (chartProfile.length === 0 || chartTotalDuration === 0) return;
-
-    let maxPower = 0;
-    for (let i = 0; i < chartProfile.length; i++) {
-        if (chartProfile[i][1] > maxPower) maxPower = chartProfile[i][1];
-    }
-    maxPower = Math.max(maxPower * 1.2, 50);
-
-    function mx(t) { return (t / chartTotalDuration) * w; }
-    function my(p) { return h - (p / maxPower) * h; }
-
-    // Draw profile
-    ctx.strokeStyle = '#555';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    let started = false;
-    for (let i = 0; i < chartProfile.length; i++) {
-        const x = mx(chartProfile[i][0]);
-        const y = my(chartProfile[i][1]);
-        if (!started) { ctx.moveTo(x, y); started = true; }
-        else { ctx.lineTo(x, y); }
-    }
-    ctx.stroke();
-
-    // Draw actuals
-    if (chartActuals.length > 0) {
-        ctx.fillStyle = '#00cc66';
-        for (let i = 0; i < chartActuals.length; i++) {
-            const x = mx(chartActuals[i][0]);
-            const y = my(chartActuals[i][1]);
-            ctx.fillRect(x - 1, y - 1, 2, 2);
-        }
-    }
-
-    updateViewportIndicator();
-}
-
-function updateViewportIndicator() {
-    const indicator = document.getElementById('chart-viewport-indicator');
-    if (!indicator) return;
-    const mini = document.getElementById('chart-mini-canvas');
-    if (!mini) return;
-    const w = mini.width;
-    if (chartTotalDuration === 0) { indicator.style.display = 'none'; return; }
-    indicator.style.display = 'block';
-    const left = (viewStart / chartTotalDuration) * w;
-    const right = (viewEnd / chartTotalDuration) * w;
-    indicator.style.left = left + 'px';
-    indicator.style.width = Math.max(right - left, 4) + 'px';
-}
-
-// Shift viewport to fit [minTime, maxTime] while maintaining window size
-function clampViewport(start, end, maxTime, minWindow) {
-    if (start < 0) { end -= start; start = 0; }
-    if (end > maxTime) { start -= end - maxTime; end = maxTime; }
-    start = Math.max(0, start);
-    if (end - start < minWindow) end = start + minWindow;
-    return [start, end];
-}
-
-// Zoom and pan controls
-function zoomChartIn() {
-    zoomChart(1.5);
-}
-function zoomChartOut() {
-    zoomChart(1 / 1.5);
-}
-function zoomChart(factor) {
-    if (chartTotalDuration <= 0) return;
-    const center = (viewStart + viewEnd) / 2;
-    const halfWindow = (viewEnd - viewStart) / 2 / factor;
-    let newStart = center - halfWindow;
-    let newEnd = center + halfWindow;
-    [newStart, newEnd] = clampViewport(newStart, newEnd, chartTotalDuration, 5);
-    const newWindow = newEnd - newStart;
-    const oldWindow = viewEnd - viewStart;
-    if (newWindow >= 5 && Math.abs(newWindow - oldWindow) > 0.5) {
-        viewStart = newStart;
-        viewEnd = newEnd;
-        drawChart();
-        updateViewportIndicator();
-    }
-}
-function resetChartView() {
-    viewStart = 0;
-    viewEnd = chartTotalDuration || 600;
+window.addEventListener('resize', function() {
     drawChart();
-    updateViewportIndicator();
-}
+});
 
-// Chart mouse handlers
 document.addEventListener('DOMContentLoaded', function() {
-    const canvas = document.getElementById('workout-chart');
-
-    canvas.addEventListener('wheel', function(e) {
-        e.preventDefault();
-        if (chartTotalDuration <= 0) return;
-        const rect = canvas.getBoundingClientRect();
-        const plotW = rect.width - 65;
-        if (plotW <= 0) return;
-        const mouseX = e.clientX - rect.left;
-        const relX = Math.max(0, Math.min(mouseX - 50, plotW));
-        const timeAtMouse = viewStart + (relX / plotW) * (viewEnd - viewStart);
-        const factor = e.deltaY < 0 ? 1.3 : 1 / 1.3;
-        const halfWindow = (viewEnd - viewStart) / 2 / factor;
-        let newStart = timeAtMouse - halfWindow;
-        let newEnd = timeAtMouse + halfWindow;
-        [newStart, newEnd] = clampViewport(newStart, newEnd, chartTotalDuration, 5);
-        const newWindow = newEnd - newStart;
-        const oldWindow = viewEnd - viewStart;
-        if (newWindow >= 5 && Math.abs(newWindow - oldWindow) > 0.5) {
-            viewStart = newStart;
-            viewEnd = newEnd;
-            drawChart();
-            updateViewportIndicator();
-        }
-    });
-
-    canvas.addEventListener('mousedown', function(e) {
-        if (chartTotalDuration <= 0) return;
-        isDragging = true;
-        dragStartX = e.clientX;
-        dragStartViewStart = viewStart;
-        dragViewWindow = viewEnd - viewStart;
-        canvas.style.cursor = 'grabbing';
-    });
-
-    window.addEventListener('mousemove', function(e) {
-        if (!isDragging) return;
-        const rect = canvas.getBoundingClientRect();
-        const dx = (e.clientX - dragStartX) / rect.width * dragViewWindow;
-        let newStart = dragStartViewStart - dx;
-        let newEnd = newStart + dragViewWindow;
-        [newStart, newEnd] = clampViewport(newStart, newEnd, chartTotalDuration, 5);
-        if (Math.abs(newStart - viewStart) > 0.5) {
-            viewStart = newStart;
-            viewEnd = newEnd;
-            drawChart();
-            updateViewportIndicator();
-        }
-    });
-
-    window.addEventListener('mouseup', function() {
-        if (isDragging) {
-            isDragging = false;
-            canvas.style.cursor = 'grab';
-        }
-    });
-
-    canvas.addEventListener('dblclick', function() {
-        resetChartView();
-    });
-
-    window.addEventListener('resize', function() {
-        drawChart();
-        drawMiniChart();
-    });
-
-    // Show an empty chart with grid on page load
     setTimeout(function() {
         viewStart = 0;
         viewEnd = chartTotalDuration || 600;
         drawChart();
-        drawMiniChart();
     }, 100);
 });
 
