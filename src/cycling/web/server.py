@@ -51,6 +51,9 @@ if static_dir.is_dir():
 
 @app.on_event("startup")
 async def startup() -> None:
+    from cycling.platform.bridge import _is_android, set_event_loop
+    if _is_android():
+        set_event_loop(asyncio.get_running_loop())
     await scan_manager.start()
 
 
