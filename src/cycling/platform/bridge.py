@@ -29,7 +29,7 @@ def set_event_loop(loop: asyncio.AbstractEventLoop) -> None:
     _loop = loop
     connect_event = asyncio.Event()
     for item in _device_buffer:
-        _loop.call_soon_threadsafe(lambda d=item: device_queue.put_nowait(d))
+        _loop.call_soon_threadsafe(device_queue.put_nowait, item)
     _device_buffer.clear()
 
 
