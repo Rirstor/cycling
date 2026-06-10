@@ -121,9 +121,19 @@ class BleManager(private val context: Context) {
     }
 
     private fun connectTrainer(address: String) {
-        val device = bluetoothAdapter?.getRemoteDevice(address) ?: return
+        val device = bluetoothAdapter?.getRemoteDevice(address)
+        if (device == null) {
+            Log.e(TAG, "getRemoteDevice returned null for $address")
+            BleBridge.onDisconnected()
+            return
+        }
         trainerGatt = device.connectGatt(context, false, trainerGattCallback)
-        Log.i(TAG, "Connecting to trainer: $address")
+        if (trainerGatt == null) {
+            Log.e(TAG, "connectGatt returned null for $address")
+            BleBridge.onDisconnected()
+        } else {
+            Log.i(TAG, "Connecting to trainer: $address")
+        }
     }
 
     private fun connectHrMonitor(address: String) {
@@ -147,16 +157,33 @@ class BleManager(private val context: Context) {
         }
 
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
-            if (status != BluetoothGatt.GATT_SUCCESS) return
+            if (status != BluetoothGatt.GATT_SUCCESS) {
+                Log.w(TAG, "Service discovery failed with status $status")
+                BleBridge.onDisconnected()
+                return
+            }
 
-            val ftmsService = gatt.getService(FTMS_SERVICE) ?: return
-            val bikeDataChar = ftmsService.getCharacteristic(INDOOR_BIKE_DATA) ?: return
+            val ftmsService = gatt.getService(FTMS_SERVICE)
+            if (ftmsService == null) {
+                Log.w(TAG, "FTMS service not found on device")
+                BleBridge.onDisconnected()
+                return
+            }
+            val bikeDataChar = ftmsService.getCharacteristic(INDOOR_BIKE_DATA)
+            if (bikeDataChar == null) {
+                Log.w(TAG, "Indoor Bike Data characteristic not found on device")
+                BleBridge.onDisconnected()
+                return
+            }
 
             val success = gatt.setCharacteristicNotification(bikeDataChar, true)
             if (success) {
                 Log.i(TAG, "Subscribed to Indoor Bike Data notifications")
                 val deviceName = gatt.device.name ?: gatt.device.address
                 BleBridge.onConnected(deviceName)
+            } else {
+                Log.w(TAG, "setCharacteristicNotification returned false")
+                BleBridge.onDisconnected()
             }
         }
 

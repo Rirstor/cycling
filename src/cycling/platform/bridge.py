@@ -58,6 +58,8 @@ def set_connected(device_name: str) -> None:
 def set_disconnected() -> None:
     global _connected
     _connected = False
+    if _loop is not None and connect_event is not None:
+        _loop.call_soon_threadsafe(connect_event.set)
 
 
 def is_connected() -> bool:
@@ -79,6 +81,8 @@ async def connect_device(address: str, hr_address: Optional[str] = None) -> None
     except ImportError:
         pass
     await asyncio.wait_for(connect_event.wait(), timeout=10.0)
+    if not _connected:
+        raise ConnectionError("Failed to connect to device")
 
 
 async def disconnect_device() -> None:
