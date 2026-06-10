@@ -23,10 +23,8 @@ def _parse_indoor_bike_data(data: bytes) -> dict[str, Any]:
     offset = 2
     result: dict[str, Any] = {}
 
-    if flags & 0x0001:
-        result["more_data"] = True
-
-    if len(data) >= offset + 2:
+    # Bit 0 (More Data): when SET, Instantaneous Speed is NOT present.
+    if flags & 0x0001 == 0 and len(data) >= offset + 2:
         raw = struct.unpack_from("<H", data, offset)[0]
         result["instantaneous_speed"] = raw / 100.0
         offset += 2

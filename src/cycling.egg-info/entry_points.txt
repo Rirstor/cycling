@@ -1,3 +1,0 @@
-[console_scripts]
-cycling = cycling.main:app
-cycling-web = cycling.web.server:main
