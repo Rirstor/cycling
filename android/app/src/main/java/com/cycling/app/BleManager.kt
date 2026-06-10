@@ -233,19 +233,37 @@ class BleManager(private val context: Context) {
 
         val buffer = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN)
         val flags = buffer.getShort().toInt() and 0xFFFF
-        var offset = 2
 
-        if (buffer.remaining() >= 2) {
+        // FTMS Indoor Bike Data is a packed structure of variable-length fields.
+        // Every optional field must be consumed in order so the cursor stays
+        // aligned for the fields that follow it. Skipping a present field (e.g.
+        // average speed/cadence or resistance) corrupts the offset of power.
+
+        // Bit 0 (More Data): when SET, Instantaneous Speed is NOT present.
+        if (flags and 0x0001 == 0 && buffer.remaining() >= 2) {
             result["instantaneous_speed"] = (buffer.getShort().toInt() and 0xFFFF
                 ).toDouble() / 100.0
-            offset += 2
         }
 
+        // Bit 1: Average Speed
+        if (flags and 0x0002 != 0 && buffer.remaining() >= 2) {
+            result["average_speed"] = (buffer.getShort().toInt() and 0xFFFF
+                ).toDouble() / 100.0
+        }
+
+        // Bit 2: Instantaneous Cadence
         if (flags and 0x0004 != 0 && buffer.remaining() >= 2) {
             result["instantaneous_cadence"] = (buffer.getShort().toInt() and 0xFFFF
                 ).toDouble() / 2.0
         }
 
+        // Bit 3: Average Cadence
+        if (flags and 0x0008 != 0 && buffer.remaining() >= 2) {
+            result["average_cadence"] = (buffer.getShort().toInt() and 0xFFFF
+                ).toDouble() / 2.0
+        }
+
+        // Bit 4: Total Distance (uint24)
         if (flags and 0x0010 != 0 && buffer.remaining() >= 3) {
             val distance = (buffer.get().toInt() and 0xFF) or
                     ((buffer.get().toInt() and 0xFF) shl 8) or
@@ -253,8 +271,19 @@ class BleManager(private val context: Context) {
             result["total_distance"] = distance.toDouble()
         }
 
+        // Bit 5: Resistance Level (sint16)
+        if (flags and 0x0020 != 0 && buffer.remaining() >= 2) {
+            result["resistance_level"] = buffer.getShort().toInt().toDouble()
+        }
+
+        // Bit 6: Instantaneous Power (sint16)
         if (flags and 0x0040 != 0 && buffer.remaining() >= 2) {
-            result["instantaneous_power"] = (buffer.getShort().toInt() and 0xFFFF).toDouble()
+            result["instantaneous_power"] = buffer.getShort().toInt().toDouble()
+        }
+
+        // Bit 7: Average Power (sint16)
+        if (flags and 0x0080 != 0 && buffer.remaining() >= 2) {
+            result["average_power"] = buffer.getShort().toInt().toDouble()
         }
 
         return result
