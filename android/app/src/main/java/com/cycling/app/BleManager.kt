@@ -3,8 +3,8 @@ package com.cycling.app
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
-import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanCallback
@@ -26,6 +26,7 @@ class BleManager(private val context: Context) {
         val INDOOR_BIKE_DATA = UUID.fromString("00002ad2-0000-1000-8000-00805f9b34fb")
         val HEART_RATE_SERVICE = UUID.fromString("0000180d-0000-1000-8000-00805f9b34fb")
         val HEART_RATE_MEASUREMENT = UUID.fromString("00002a37-0000-1000-8000-00805f9b34fb")
+        val CCCD = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
     }
 
     val bluetoothAdapter: BluetoothAdapter? =
@@ -178,6 +179,14 @@ class BleManager(private val context: Context) {
 
             val success = gatt.setCharacteristicNotification(bikeDataChar, true)
             if (success) {
+                val cccd = bikeDataChar.getDescriptor(CCCD)
+                if (cccd != null) {
+                    cccd.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                    gatt.writeDescriptor(cccd)
+                    Log.i(TAG, "CCCD descriptor written for Indoor Bike Data")
+                } else {
+                    Log.w(TAG, "CCCD descriptor not found")
+                }
                 Log.i(TAG, "Subscribed to Indoor Bike Data notifications")
                 val deviceName = gatt.device.name ?: gatt.device.address
                 BleBridge.onConnected(deviceName)
@@ -210,6 +219,11 @@ class BleManager(private val context: Context) {
             val hrService = gatt.getService(HEART_RATE_SERVICE) ?: return
             val hrChar = hrService.getCharacteristic(HEART_RATE_MEASUREMENT) ?: return
             gatt.setCharacteristicNotification(hrChar, true)
+            val cccd = hrChar.getDescriptor(CCCD)
+            if (cccd != null) {
+                cccd.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                gatt.writeDescriptor(cccd)
+            }
         }
 
         override fun onCharacteristicChanged(

@@ -384,187 +384,89 @@ function startLiveSSE() {
 }
 
 function updateDashboard(data) {
-    // Row 1: Timers
+    // Status
+    const dot = document.getElementById('status-dot');
+    const text = document.getElementById('status-text');
+    if (dot) dot.className = 'status-dot ' + (data.connected ? 'on' : 'off');
+    if (text) text.textContent = data.connected ? 'Connected' : 'Disconnected';
+
+    // Elapsed time
+    const mins = Math.floor((data.elapsed || 0) / 60);
+    const secs = (data.elapsed || 0) % 60;
+    const elapsedStr = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+    const elapsedEl = document.getElementById('elapsed-display');
+    if (elapsedEl) elapsedEl.textContent = elapsedStr;
+
+    // Segment & total timers
     const remain = data.routine_active ? (data.segment_time_remaining || 0) : 0;
-    document.getElementById('segment-time').textContent = formatDuration(remain);
-    document.getElementById('total-time').textContent = formatDuration(data.elapsed);
+    const segEl = document.getElementById('segment-time');
+    if (segEl) segEl.textContent = formatDuration(remain);
+    const totalEl = document.getElementById('total-time');
+    if (totalEl) totalEl.textContent = formatDuration(data.elapsed || 0);
 
-    // Row 2: RPM & HR
-    document.getElementById('cadence-val').textContent = data.cadence_rpm != null ? data.cadence_rpm.toFixed(0) : '--';
-    document.getElementById('hr-val').textContent = data.heart_rate_bpm != null ? data.heart_rate_bpm.toFixed(0) : '--';
-
-    // Row 3: Target + Delta + Speed
+    // Metrics: Power (target-power), Cadence, HR, Speed
     const targetPowerEl = document.getElementById('target-power');
     const targetDeltaEl = document.getElementById('target-delta');
     if (data.routine_active && data.target_power != null) {
-        targetPowerEl.textContent = data.target_power.toFixed(0);
-        if (data.power_watts != null) {
+        if (targetPowerEl) targetPowerEl.textContent = data.target_power.toFixed(0);
+        if (data.power_watts != null && targetDeltaEl) {
             const delta = data.power_watts - data.target_power;
-            const sign = delta >= 0 ? '▲' : '▼';
-            targetDeltaEl.textContent = sign + Math.abs(delta).toFixed(0) + 'W';
+            targetDeltaEl.textContent = (delta >= 0 ? '▲' : '▼') + Math.abs(delta).toFixed(0) + 'W';
             targetDeltaEl.className = 'target-delta ' + (Math.abs(delta) <= 10 ? 'on-target' : 'off-target');
-        } else {
+        } else if (targetDeltaEl) {
             targetDeltaEl.textContent = '';
             targetDeltaEl.className = 'target-delta';
         }
     } else {
-        targetPowerEl.textContent = '--';
-        targetDeltaEl.textContent = '';
-        targetDeltaEl.className = 'target-delta';
+        if (targetPowerEl) targetPowerEl.textContent = '--';
+        if (targetDeltaEl) { targetDeltaEl.textContent = ''; targetDeltaEl.className = 'target-delta'; }
     }
 
+    const cadEl = document.getElementById('cadence-val');
+    if (cadEl) cadEl.textContent = data.cadence_rpm != null ? data.cadence_rpm.toFixed(0) : '--';
+    const hrEl = document.getElementById('hr-val');
+    if (hrEl) hrEl.textContent = data.heart_rate_bpm != null ? data.heart_rate_bpm.toFixed(0) : '--';
     const speed = data.speed_kph || data.theoretical_speed;
-    document.getElementById('speed-val').textContent = speed != null ? speed.toFixed(1) : '--';
+    const speedEl = document.getElementById('speed-val');
+    if (speedEl) speedEl.textContent = speed != null ? speed.toFixed(1) : '--';
+
+    // Recording button
+    const recordBtn = document.getElementById('record-btn');
+    if (recordBtn) {
+        recordBtn.innerHTML = data.recording ? '&#9632; Stop' : '&#9679; Rec';
+    }
 
     // Routine info bar
     const nameBar = document.getElementById('routine-name-bar');
     const playBtn = document.getElementById('routine-play-btn');
+    const badge = document.getElementById('routine-status-badge');
     if (data.routine_active) {
-        nameBar.style.display = 'flex';
-        document.getElementById('routine-name-display').textContent = data.routine_name || 'Workout';
-        const badge = document.getElementById('routine-status-badge');
-        if (data.routine_status === 'playing') {
-            badge.textContent = 'Active';
-            playBtn.innerHTML = '&#10074;&#10074; Pause';
-        } else if (data.routine_status === 'paused') {
-            badge.textContent = 'Paused';
-            playBtn.innerHTML = '&#9654; Resume';
-        } else if (data.routine_status === 'completed') {
-            badge.textContent = 'Completed';
-            playBtn.innerHTML = '&#9654; Play';
+        if (nameBar) nameBar.style.display = 'flex';
+        const nameEl = document.getElementById('routine-name-display');
+        if (nameEl) nameEl.textContent = data.routine_name || 'Workout';
+        if (badge) {
+            if (data.routine_status === 'playing') {
+                badge.textContent = 'Active';
+                if (playBtn) playBtn.innerHTML = '&#10074;&#10074; Pause';
+            } else if (data.routine_status === 'paused') {
+                badge.textContent = 'Paused';
+                if (playBtn) playBtn.innerHTML = '&#9654; Resume';
+            } else if (data.routine_status === 'completed') {
+                badge.textContent = 'Completed';
+                if (playBtn) playBtn.innerHTML = '&#9654; Play';
+            }
         }
     } else {
-        nameBar.style.display = 'none';
-        playBtn.innerHTML = '&#9654; Play';
-    }
-
-    // Recording button
-    const recordBtn = document.getElementById('record-btn');
-    recordBtn.innerHTML = data.recording ? '&#9632; Stop' : '&#9679; Rec';
-
-    // Update chart
-    if (data.routine_active && data.total_elapsed != null && data.power_watts != null) {
-        chartActuals.push([data.total_elapsed, data.power_watts]);
-    }
-    if (data.routine_active) {
-        drawChart();
-    }
-}
-
-function updateDashboard(data) {
-    const dot = document.getElementById('status-dot');
-    const text = document.getElementById('status-text');
-    dot.className = 'status-dot ' + (data.connected ? 'on' : 'off');
-    text.textContent = data.connected ? 'Connected' : 'Disconnected';
-
-    const recIndicator = document.getElementById('record-indicator');
-    const recordBtn = document.getElementById('record-btn');
-    if (data.recording) {
-        recIndicator.style.display = 'inline';
-        recordBtn.textContent = 'Stop Recording';
-        recordBtn.className = 'secondary';
-    } else {
-        recIndicator.style.display = 'none';
-        recordBtn.textContent = 'Start Recording';
-        recordBtn.className = 'primary';
-    }
-
-    // Power - green/red based on target
-    const powerEl = document.getElementById('power-val');
-    const powerCard = document.getElementById('power-card');
-    powerEl.textContent = data.power_watts != null ? data.power_watts.toFixed(0) : '--';
-
-    const targetPowerEl = document.getElementById('power-target-display');
-    if (data.routine_active && data.target_power != null) {
-        targetPowerEl.textContent = 'Target: ' + data.target_power.toFixed(0) + ' W';
-        if (data.power_within_range != null) {
-            powerEl.style.color = data.power_within_range ? '#00cc66' : '#ff3333';
-        } else {
-            powerEl.style.color = '';
-        }
-    } else {
-        targetPowerEl.textContent = '';
-        powerEl.style.color = '';
-    }
-
-    document.getElementById('hr-val').textContent = data.heart_rate_bpm != null ? data.heart_rate_bpm.toFixed(0) : '--';
-
-    // Cadence - green/red based on target
-    const cadEl = document.getElementById('cadence-val');
-    const cadCard = document.getElementById('cadence-card');
-    cadEl.textContent = data.cadence_rpm != null ? data.cadence_rpm.toFixed(0) : '--';
-
-    const targetCadEl = document.getElementById('cadence-target-display');
-    if (data.routine_active && data.target_cadence != null) {
-        targetCadEl.textContent = 'Target: ' + data.target_cadence.toFixed(0) + ' rpm';
-        if (data.cadence_within_range != null) {
-            cadEl.style.color = data.cadence_within_range ? '#00cc66' : '#ff3333';
-        } else {
-            cadEl.style.color = '';
-        }
-    } else {
-        targetCadEl.textContent = '';
-        cadEl.style.color = '';
-    }
-
-    document.getElementById('zone-val').textContent = data.zone ? 'Zone ' + data.zone : '--';
-    document.getElementById('zone-name').textContent = data.zone_name || '--';
-
-    const bar = document.getElementById('power-pct-bar');
-    bar.value = data.power_pct || 0;
-    document.getElementById('power-pct-text').textContent = (data.power_pct || 0).toFixed(0) + '%';
-
-    const mins = Math.floor(data.elapsed / 60);
-    const secs = data.elapsed % 60;
-    const elapsedStr = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
-    document.getElementById('elapsed-val').textContent = elapsedStr;
-    document.getElementById('elapsed-display').textContent = elapsedStr;
-
-    document.getElementById('avg-power').textContent = data.avg_power != null ? data.avg_power.toFixed(0) + ' W' : '--';
-    document.getElementById('avg-hr').textContent = data.avg_hr != null ? data.avg_hr.toFixed(0) + ' bpm' : '--';
-    document.getElementById('avg-cad').textContent = data.avg_cad != null ? data.avg_cad.toFixed(0) + ' rpm' : '--';
-
-    if (data.time_in_zones) {
-        for (const [zone, seconds] of Object.entries(data.time_in_zones)) {
-            const el = document.getElementById('zone-' + zone + '-time');
-            if (el) el.textContent = seconds.toFixed(0) + 's';
-        }
-    }
-
-    // Routine info
-    if (data.routine_active) {
-        const segInfo = document.getElementById('routine-segment-info');
-        segInfo.textContent = 'Segment: ' + (data.segment_index + 1) + '/' + data.segment_count;
-        document.getElementById('routine-segment-desc').textContent = data.segment_description || '';
-        const remain = data.segment_time_remaining || 0;
-        const rm = Math.floor(remain / 60);
-        const rs = Math.floor(remain % 60);
-        document.getElementById('routine-segment-time').textContent = 'Time left: ' + String(rm).padStart(2,'0') + ':' + String(rs).padStart(2,'0');
-        const totalPct = data.total_duration > 0 ? (data.total_elapsed / data.total_duration * 100) : 0;
-        document.getElementById('routine-total-progress').textContent = 'Total: ' + Math.min(totalPct, 100).toFixed(0) + '%';
-
-        const playBtn = document.getElementById('routine-play-btn');
-        if (data.routine_status === 'playing') {
-            playBtn.textContent = 'Pause';
-            document.getElementById('routine-status-badge').textContent = 'Active';
-            document.getElementById('routine-status-badge').style.color = 'var(--pico-color-green-500)';
-        } else if (data.routine_status === 'paused') {
-            playBtn.textContent = 'Resume';
-            document.getElementById('routine-status-badge').textContent = 'Paused';
-            document.getElementById('routine-status-badge').style.color = 'var(--pico-color-yellow-500)';
-        } else if (data.routine_status === 'completed') {
-            playBtn.textContent = 'Play';
-            document.getElementById('routine-status-badge').textContent = 'Completed';
-            document.getElementById('routine-status-badge').style.color = '#00cc66';
-        }
+        if (nameBar) nameBar.style.display = 'none';
+        if (playBtn) playBtn.innerHTML = '&#9654; Play';
     }
 
     // Update chart if routine active
-    if (data.routine_active) {
-        const ctx = document.getElementById('workout-chart');
-        if (ctx && data.total_elapsed != null) {
-            updateChartActuals(data);
+    if (data.routine_active && data.total_elapsed != null) {
+        if (data.power_watts != null) {
+            chartActuals.push([data.total_elapsed, data.power_watts]);
         }
+        drawChart();
     }
 }
 

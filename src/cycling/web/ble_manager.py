@@ -26,6 +26,7 @@ class BLEManager:
     def __init__(self) -> None:
         self._client: Optional[BleClientProtocol] = None
         self._task: Optional[asyncio.Task] = None
+        self._heartbeat_task: Optional[asyncio.Task] = None
         self._subscribers: list[asyncio.Queue[dict[str, Any]]] = []
         self._records: list[CyclingRecord] = []
         self._last_power: Optional[float] = None
@@ -202,6 +203,7 @@ class BLEManager:
         self._last_speed = None
 
         self._task = asyncio.create_task(self._stream_loop())
+        self._heartbeat_task = asyncio.create_task(self._heartbeat())
         await self._broadcast(self._build_sse_data())
 
     async def disconnect(self) -> None:
@@ -212,6 +214,9 @@ class BLEManager:
         if self._task:
             self._task.cancel()
             self._task = None
+        if self._heartbeat_task:
+            self._heartbeat_task.cancel()
+            self._heartbeat_task = None
         if self._client:
             await self._client.disconnect()
             self._client = None
@@ -222,13 +227,6 @@ class BLEManager:
             return
         try:
             async for record in self._client.stream_data():
-                now = datetime.now()
-                if self._last_tick_time is not None:
-                    delta = (now - self._last_tick_time).total_seconds()
-                else:
-                    delta = 0.0
-                self._last_tick_time = now
-
                 self._records.append(record)
 
                 if record.power_watts is not None:
@@ -250,16 +248,27 @@ class BLEManager:
                     record.cadence_rpm = self._last_cad
                 if record.heart_rate_bpm is None:
                     record.heart_rate_bpm = self._last_hr
-
-                self._routine.tick(delta, record.power_watts, record.cadence_rpm)
-
-                sse_data = self._build_sse_data()
-                await self._broadcast(sse_data)
         except asyncio.CancelledError:
             pass
         except Exception:
             self._connected = False
             await self._broadcast(self._build_sse_data())
+
+    async def _heartbeat(self) -> None:
+        try:
+            while self._connected:
+                await asyncio.sleep(1.0)
+                now = datetime.now()
+                if self._last_tick_time is not None:
+                    delta = (now - self._last_tick_time).total_seconds()
+                else:
+                    delta = 0.0
+                self._last_tick_time = now
+                self._routine.tick(delta, self._last_power, self._last_cad)
+                sse_data = self._build_sse_data()
+                await self._broadcast(sse_data)
+        except asyncio.CancelledError:
+            pass
 
     async def _broadcast(self, data: dict[str, Any]) -> None:
         for q in self._subscribers:
