@@ -26,11 +26,13 @@ class BLEManager:
     def __init__(self) -> None:
         self._client: Optional[BleClientProtocol] = None
         self._task: Optional[asyncio.Task] = None
+        self._heartbeat_task: Optional[asyncio.Task] = None
         self._subscribers: list[asyncio.Queue[dict[str, Any]]] = []
         self._records: list[CyclingRecord] = []
         self._last_power: Optional[float] = None
         self._last_cad: Optional[float] = None
         self._last_hr: Optional[float] = None
+        self._last_speed: Optional[float] = None
         self._zones: Optional[CogganZones] = None
         self._time_in_zones: dict[int, float] = {}
         self._start_time: Optional[datetime] = None
@@ -89,6 +91,27 @@ class BLEManager:
     async def routine_stop(self) -> None:
         self._routine.stop()
 
+    @staticmethod
+    def _theoretical_speed(power: float) -> float:
+        if power <= 0:
+            return 0.0
+        mass = 80.0
+        cda = 0.4
+        crr = 0.005
+        g = 9.81
+        rho = 1.2
+        v = power / 30.0
+        for _ in range(20):
+            f = (crr * mass * g + 0.5 * rho * cda * v * v) * v - power
+            fp = crr * mass * g + 1.5 * rho * cda * v * v
+            if fp == 0:
+                break
+            v -= f / fp
+            if v <= 0:
+                v = 0.1
+                break
+        return round(v * 3.6, 1)
+
     def _build_sse_data(self) -> dict[str, Any]:
         ftp = self._ftp
         elapsed = 0
@@ -132,12 +155,20 @@ class BLEManager:
             evaluation = self._routine.evaluate(power, cad)
             routine_data.update(evaluation)
 
+        target_power = routine_data.get("target_power")
+        target_delta: Optional[float] = None
+        if routine_data.get("routine_active") and power is not None and target_power is not None:
+            target_delta = round(power - target_power, 0)
+
         return {
             "connected": self._connected,
             "recording": self._recording,
             "power_watts": power,
             "cadence_rpm": cad,
             "heart_rate_bpm": hr,
+            "speed_kph": self._last_speed,
+            "theoretical_speed": self._theoretical_speed(power) if power is not None else None,
+            "target_delta": target_delta,
             "zone": zone_num,
             "zone_name": zone_name,
             "zone_color": zone_color,
@@ -169,8 +200,10 @@ class BLEManager:
         self._last_power = None
         self._last_cad = None
         self._last_hr = None
+        self._last_speed = None
 
         self._task = asyncio.create_task(self._stream_loop())
+        self._heartbeat_task = asyncio.create_task(self._heartbeat())
         await self._broadcast(self._build_sse_data())
 
     async def disconnect(self) -> None:
@@ -181,6 +214,9 @@ class BLEManager:
         if self._task:
             self._task.cancel()
             self._task = None
+        if self._heartbeat_task:
+            self._heartbeat_task.cancel()
+            self._heartbeat_task = None
         if self._client:
             await self._client.disconnect()
             self._client = None
@@ -191,13 +227,6 @@ class BLEManager:
             return
         try:
             async for record in self._client.stream_data():
-                now = datetime.now()
-                if self._last_tick_time is not None:
-                    delta = (now - self._last_tick_time).total_seconds()
-                else:
-                    delta = 0.0
-                self._last_tick_time = now
-
                 self._records.append(record)
 
                 if record.power_watts is not None:
@@ -210,6 +239,8 @@ class BLEManager:
                     self._last_cad = record.cadence_rpm
                 if record.heart_rate_bpm is not None:
                     self._last_hr = record.heart_rate_bpm
+                if record.speed_kph is not None:
+                    self._last_speed = record.speed_kph
 
                 if record.power_watts is None:
                     record.power_watts = self._last_power
@@ -217,16 +248,27 @@ class BLEManager:
                     record.cadence_rpm = self._last_cad
                 if record.heart_rate_bpm is None:
                     record.heart_rate_bpm = self._last_hr
-
-                self._routine.tick(delta, record.power_watts, record.cadence_rpm)
-
-                sse_data = self._build_sse_data()
-                await self._broadcast(sse_data)
         except asyncio.CancelledError:
             pass
         except Exception:
             self._connected = False
             await self._broadcast(self._build_sse_data())
+
+    async def _heartbeat(self) -> None:
+        try:
+            while self._connected:
+                await asyncio.sleep(1.0)
+                now = datetime.now()
+                if self._last_tick_time is not None:
+                    delta = (now - self._last_tick_time).total_seconds()
+                else:
+                    delta = 0.0
+                self._last_tick_time = now
+                self._routine.tick(delta, self._last_power, self._last_cad)
+                sse_data = self._build_sse_data()
+                await self._broadcast(sse_data)
+        except asyncio.CancelledError:
+            pass
 
     async def _broadcast(self, data: dict[str, Any]) -> None:
         for q in self._subscribers:

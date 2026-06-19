@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import asyncio
-import os
-import sys
 from datetime import datetime
 from typing import Any, Optional
 
 from cycling.ble.scanner import scan_devices
+from cycling.platform.bridge import _is_android
 
 
 class ScanManager:
@@ -30,7 +29,7 @@ class ScanManager:
         if self._running:
             return
         self._running = True
-        if getattr(sys, "platform", "") == "android" or "ANDROID_BOOT" in os.environ:
+        if _is_android():
             self._bridge_task = asyncio.create_task(self._bridge_listener())
         else:
             self._task = asyncio.create_task(self._scan_loop())

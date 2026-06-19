@@ -21,9 +21,9 @@ CYCLING_SERVICE_UUIDS = {u.lower() for u in SERVICE_UUIDS}
 
 def is_cycling_device(device: BLEDevice, adv_data: AdvertisementData | None = None) -> bool:
     if device.name and any(kw in device.name.lower() for kw in ["kickr", "tacx", "neo", "suito", "wahoo",
-                                                                  "elite", "zwift", "hub", "hammer",
-                                                                  "h3", "flux", "snap", "dragon",
-                                                                  "stages", "garmin", "assist"]):
+                                                                   "elite", "zwift", "hub", "hammer",
+                                                                   "h3", "flux", "snap", "dragon",
+                                                                   "stages", "garmin", "assist", "jfic"]):
         return True
     if adv_data and adv_data.service_uuids:
         for uuid in adv_data.service_uuids:

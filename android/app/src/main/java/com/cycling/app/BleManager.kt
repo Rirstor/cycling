@@ -5,15 +5,13 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
-import android.content.Intent
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -29,9 +27,10 @@ class BleManager(private val context: Context) {
         val INDOOR_BIKE_DATA = UUID.fromString("00002ad2-0000-1000-8000-00805f9b34fb")
         val HEART_RATE_SERVICE = UUID.fromString("0000180d-0000-1000-8000-00805f9b34fb")
         val HEART_RATE_MEASUREMENT = UUID.fromString("00002a37-0000-1000-8000-00805f9b34fb")
+        val CCCD = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
     }
 
-    private val bluetoothAdapter: BluetoothAdapter? =
+    val bluetoothAdapter: BluetoothAdapter? =
         (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
 
     private val bleScanner = bluetoothAdapter?.bluetoothLeScanner
@@ -51,13 +50,10 @@ class BleManager(private val context: Context) {
     }
 
     fun startScanning() {
-        if (bleScanner == null) return
-
-        val filters = listOf(
-            ScanFilter.Builder()
-                .setServiceUuid(android.os.ParcelUuid(FTMS_SERVICE))
-                .build()
-        )
+        if (bleScanner == null) {
+            Log.w(TAG, "bleScanner is null — Bluetooth may be off")
+            return
+        }
 
         val settings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
@@ -68,12 +64,50 @@ class BleManager(private val context: Context) {
                 val device = result.device
                 val name = device.name ?: "Unknown"
                 val rssi = result.rssi
-                BleBridge.onDeviceFound(device.address, name, rssi)
+                Log.v(TAG, "Scan result: $name (${device.address}) RSSI=$rssi")
+                if (isCyclingDevice(name, result)) {
+                    BleBridge.onDeviceFound(device.address, name, rssi)
+                }
+            }
+
+            override fun onScanFailed(errorCode: Int) {
+                val reason = when (errorCode) {
+                    SCAN_FAILED_ALREADY_STARTED -> "Scan already started"
+                    SCAN_FAILED_APPLICATION_REGISTRATION_FAILED -> "App registration failed"
+                    SCAN_FAILED_FEATURE_UNSUPPORTED -> "Feature unsupported"
+                    SCAN_FAILED_INTERNAL_ERROR -> "Internal error"
+                    else -> "Unknown error ($errorCode)"
+                }
+                Log.e(TAG, "BLE scan failed: $reason")
             }
         }
 
-        bleScanner.startScan(filters, settings, scanCallback)
-        Log.i(TAG, "BLE scanning started")
+        try {
+            bleScanner.startScan(null, settings, scanCallback)
+            Log.i(TAG, "BLE scanning started (unfiltered)")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start BLE scan", e)
+        }
+    }
+
+    private fun isCyclingDevice(name: String, result: ScanResult): Boolean {
+        val lower = name.lowercase()
+        val cyclingKeywords = listOf(
+            "kickr", "tacx", "neo", "suito", "wahoo", "elite",
+            "zwift", "hub", "hammer", "h3", "flux", "snap",
+            "dragon", "stages", "garmin", "assist", "jfic"
+        )
+        if (cyclingKeywords.any { lower.contains(it) }) return true
+
+        val serviceUuids = result.scanRecord?.serviceUuids ?: return false
+        val cyclingServiceUuids = setOf(
+            "00001826-0000-1000-8000-00805f9b34fb",
+            "00001818-0000-1000-8000-00805f9b34fb",
+            "00001816-0000-1000-8000-00805f9b34fb",
+            "0000180d-0000-1000-8000-00805f9b34fb",
+            "0000180f-0000-1000-8000-00805f9b34fb",
+        )
+        return serviceUuids.any { it.uuid.toString().lowercase() in cyclingServiceUuids }
     }
 
     fun stopScanning() {
@@ -89,9 +123,19 @@ class BleManager(private val context: Context) {
     }
 
     private fun connectTrainer(address: String) {
-        val device = bluetoothAdapter?.getRemoteDevice(address) ?: return
+        val device = bluetoothAdapter?.getRemoteDevice(address)
+        if (device == null) {
+            Log.e(TAG, "getRemoteDevice returned null for $address")
+            BleBridge.onDisconnected()
+            return
+        }
         trainerGatt = device.connectGatt(context, false, trainerGattCallback)
-        Log.i(TAG, "Connecting to trainer: $address")
+        if (trainerGatt == null) {
+            Log.e(TAG, "connectGatt returned null for $address")
+            BleBridge.onDisconnected()
+        } else {
+            Log.i(TAG, "Connecting to trainer: $address")
+        }
     }
 
     private fun connectHrMonitor(address: String) {
@@ -115,16 +159,41 @@ class BleManager(private val context: Context) {
         }
 
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
-            if (status != BluetoothGatt.GATT_SUCCESS) return
+            if (status != BluetoothGatt.GATT_SUCCESS) {
+                Log.w(TAG, "Service discovery failed with status $status")
+                BleBridge.onDisconnected()
+                return
+            }
 
-            val ftmsService = gatt.getService(FTMS_SERVICE) ?: return
-            val bikeDataChar = ftmsService.getCharacteristic(INDOOR_BIKE_DATA) ?: return
+            val ftmsService = gatt.getService(FTMS_SERVICE)
+            if (ftmsService == null) {
+                Log.w(TAG, "FTMS service not found on device")
+                BleBridge.onDisconnected()
+                return
+            }
+            val bikeDataChar = ftmsService.getCharacteristic(INDOOR_BIKE_DATA)
+            if (bikeDataChar == null) {
+                Log.w(TAG, "Indoor Bike Data characteristic not found on device")
+                BleBridge.onDisconnected()
+                return
+            }
 
             val success = gatt.setCharacteristicNotification(bikeDataChar, true)
             if (success) {
+                val cccd = bikeDataChar.getDescriptor(CCCD)
+                if (cccd != null) {
+                    cccd.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                    gatt.writeDescriptor(cccd)
+                    Log.i(TAG, "CCCD descriptor written for Indoor Bike Data")
+                } else {
+                    Log.w(TAG, "CCCD descriptor not found")
+                }
                 Log.i(TAG, "Subscribed to Indoor Bike Data notifications")
                 val deviceName = gatt.device.name ?: gatt.device.address
                 BleBridge.onConnected(deviceName)
+            } else {
+                Log.w(TAG, "setCharacteristicNotification returned false")
+                BleBridge.onDisconnected()
             }
         }
 
@@ -151,6 +220,11 @@ class BleManager(private val context: Context) {
             val hrService = gatt.getService(HEART_RATE_SERVICE) ?: return
             val hrChar = hrService.getCharacteristic(HEART_RATE_MEASUREMENT) ?: return
             gatt.setCharacteristicNotification(hrChar, true)
+            val cccd = hrChar.getDescriptor(CCCD)
+            if (cccd != null) {
+                cccd.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                gatt.writeDescriptor(cccd)
+            }
         }
 
         override fun onCharacteristicChanged(

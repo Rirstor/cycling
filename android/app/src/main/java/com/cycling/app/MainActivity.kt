@@ -77,6 +77,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startApp() {
+        BleBridge.bleManager = bleManager
         bleManager.initialize()
         bleManager.startScanning()
         pythonServer.start()

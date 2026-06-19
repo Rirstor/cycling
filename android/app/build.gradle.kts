@@ -59,6 +59,14 @@ chaquopy {
     }
 }
 
+val copyPythonSource by tasks.registering(Copy::class) {
+    from("${rootProject.projectDir}/../src/cycling")
+    into("src/main/python/cycling")
+}
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("PythonSources") }.configureEach {
+    dependsOn(copyPythonSource)
+}
+
 dependencies {
     implementation("androidx.webkit:webkit:1.10.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
