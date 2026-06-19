@@ -52,6 +52,21 @@
         </div>
     </div>
 
+    <div class="power-row">
+        <div class="metric-box" id="actual-power-box">
+            <span class="metric-value" id="actual-power-val">--</span>
+            <span class="metric-unit">Watts</span>
+        </div>
+        <div class="metric-box" id="target-power-box">
+            <span class="metric-value" id="target-power-val">--</span>
+            <span class="metric-unit">Target</span>
+        </div>
+        <div class="metric-box" id="speed-box">
+            <span class="metric-value" id="speed-val">--</span>
+            <span class="metric-unit">km/h</span>
+        </div>
+    </div>
+
     <div class="metrics-row">
         <div class="metric-box" id="cadence-box">
             <span class="metric-value" id="cadence-val">--</span>
@@ -60,19 +75,6 @@
         <div class="metric-box" id="hr-box">
             <span class="metric-value" id="hr-val">--</span>
             <span class="metric-unit">BPM</span>
-        </div>
-    </div>
-
-    <div class="target-row" id="target-row">
-        <div class="target-main">
-            <span class="target-label">Target</span>
-            <span class="target-watts" id="target-power">--</span>
-            <span class="target-unit">W</span>
-            <span class="target-delta" id="target-delta"></span>
-        </div>
-        <div class="speed-display">
-            <span class="speed-value" id="speed-val">--</span>
-            <span class="speed-unit">km/h</span>
         </div>
     </div>
 
@@ -404,31 +406,43 @@ function updateDashboard(data) {
     const totalEl = document.getElementById('total-time');
     if (totalEl) totalEl.textContent = formatDuration(data.elapsed || 0);
 
-    // Metrics: Power (target-power), Cadence, HR, Speed
-    const targetPowerEl = document.getElementById('target-power');
-    const targetDeltaEl = document.getElementById('target-delta');
-    if (data.routine_active && data.target_power != null) {
-        if (targetPowerEl) targetPowerEl.textContent = data.target_power.toFixed(0);
-        if (data.power_watts != null && targetDeltaEl) {
-            const delta = data.power_watts - data.target_power;
-            targetDeltaEl.textContent = (delta >= 0 ? '▲' : '▼') + Math.abs(delta).toFixed(0) + 'W';
-            targetDeltaEl.className = 'target-delta ' + (Math.abs(delta) <= 10 ? 'on-target' : 'off-target');
-        } else if (targetDeltaEl) {
-            targetDeltaEl.textContent = '';
-            targetDeltaEl.className = 'target-delta';
+    // Metrics: Actual Power (colored by 10% target deviation), Target, Speed, Cadence, HR
+    const actualPowerEl = document.getElementById('actual-power-val');
+    const targetPowerEl = document.getElementById('target-power-val');
+    const speedEl = document.getElementById('speed-val');
+    const cadEl = document.getElementById('cadence-val');
+    const hrEl = document.getElementById('hr-val');
+
+    // Actual Power — standalone value, colored green/red based on 10% target deviation
+    if (data.power_watts != null && actualPowerEl) {
+        actualPowerEl.textContent = data.power_watts.toFixed(0);
+        if (data.routine_active && data.target_power != null && data.target_power > 0) {
+            const devPct = Math.abs(data.power_watts - data.target_power) / data.target_power;
+            actualPowerEl.className = 'metric-value ' + (devPct <= 0.10 ? 'on-target' : 'off-target');
+        } else {
+            actualPowerEl.className = 'metric-value';
         }
-    } else {
-        if (targetPowerEl) targetPowerEl.textContent = '--';
-        if (targetDeltaEl) { targetDeltaEl.textContent = ''; targetDeltaEl.className = 'target-delta'; }
+    } else if (actualPowerEl) {
+        actualPowerEl.textContent = '--';
+        actualPowerEl.className = 'metric-value';
     }
 
-    const cadEl = document.getElementById('cadence-val');
+    // Target Power
+    if (targetPowerEl) {
+        targetPowerEl.textContent = (data.routine_active && data.target_power != null)
+            ? data.target_power.toFixed(0) : '--';
+    }
+
+    // Speed (actual BLE speed, fallback to theoretical)
+    if (speedEl) {
+        const speed = data.speed_kph || data.theoretical_speed;
+        speedEl.textContent = speed != null ? speed.toFixed(1) : '--';
+    }
+
+    // Cadence
     if (cadEl) cadEl.textContent = data.cadence_rpm != null ? data.cadence_rpm.toFixed(0) : '--';
-    const hrEl = document.getElementById('hr-val');
+    // Heart Rate
     if (hrEl) hrEl.textContent = data.heart_rate_bpm != null ? data.heart_rate_bpm.toFixed(0) : '--';
-    const speed = data.speed_kph || data.theoretical_speed;
-    const speedEl = document.getElementById('speed-val');
-    if (speedEl) speedEl.textContent = speed != null ? speed.toFixed(1) : '--';
 
     // Recording button
     const recordBtn = document.getElementById('record-btn');
