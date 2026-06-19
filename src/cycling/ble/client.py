@@ -24,7 +24,7 @@ def _parse_indoor_bike_data(data: bytes) -> dict[str, Any]:
     result: dict[str, Any] = {}
 
     # Bit 0 (More Data): when SET, Instantaneous Speed is NOT present.
-    if flags & 0x0001 == 0 and len(data) >= offset + 2:
+    if (flags & 0x0001) == 0 and len(data) >= offset + 2:
         raw = struct.unpack_from("<H", data, offset)[0]
         result["instantaneous_speed"] = raw / 100.0
         offset += 2
@@ -49,7 +49,8 @@ def _parse_indoor_bike_data(data: bytes) -> dict[str, Any]:
 
     if flags & 0x0010:
         if len(data) >= offset + 3:
-            result["total_distance"] = struct.unpack_from("<I", data, offset)[0] & 0xFFFFFF
+            raw = data[offset] | (data[offset + 1] << 8) | (data[offset + 2] << 16)
+            result["total_distance"] = raw
             offset += 3
 
     if flags & 0x0020:
