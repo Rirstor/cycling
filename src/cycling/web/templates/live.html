@@ -490,9 +490,13 @@ function getChartCanvas() {
     const container = document.getElementById('chart-area');
     if (!container) return null;
     const crect = container.getBoundingClientRect();
-    if (crect.width === 0) return null;
-    canvas.width = crect.width;
-    canvas.height = crect.height;
+    if (crect.width === 0 || crect.height === 0) return null;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = crect.width * dpr;
+    canvas.height = crect.height * dpr;
+    canvas.style.width = crect.width + 'px';
+    canvas.style.height = crect.height + 'px';
+    canvas._dpr = dpr;
     return canvas;
 }
 
@@ -531,8 +535,10 @@ function drawChart() {
     const canvas = getChartCanvas();
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const w = canvas.width;
-    const h = canvas.height;
+    const dpr = canvas._dpr || 1;
+    const w = canvas.width / dpr;
+    const h = canvas.height / dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const pad = { top: 10, bottom: 25, left: 50, right: 15 };
     const plotW = w - pad.left - pad.right;
     const plotH = h - pad.top - pad.bottom;
@@ -715,8 +721,9 @@ function drawChart() {
 
 
 
-window.addEventListener('resize', function() {
-    drawChart();
+window.addEventListener('resize', drawChart);
+window.addEventListener('orientationchange', function() {
+    setTimeout(drawChart, 300);
 });
 
 document.addEventListener('DOMContentLoaded', function() {
