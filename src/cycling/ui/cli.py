@@ -28,7 +28,8 @@ ZONE_COLORS = {
 
 def build_live_layout(record: CyclingRecord, zones: CogganZones, elapsed: int,
                       avg_power: float, avg_hr: float, avg_cad: float,
-                      time_in_zones: dict[int, float]) -> Layout:
+                      time_in_zones: dict[int, float],
+                      target_power: float | None = None) -> Layout:
     layout = Layout()
     layout.split_column(
         Layout(name="top", size=6),
@@ -45,11 +46,23 @@ def build_live_layout(record: CyclingRecord, zones: CogganZones, elapsed: int,
     power_str = f"{record.power_watts:.0f}" if record.power_watts is not None else "--"
     hr_str = f"{record.heart_rate_bpm:.0f}" if record.heart_rate_bpm is not None else "--"
     cad_str = f"{record.cadence_rpm:.0f}" if record.cadence_rpm is not None else "--"
+    speed_str = f"{record.speed_kph:.1f}" if record.speed_kph is not None else "--"
+    target_str = f"{target_power:.0f}" if target_power is not None else "--"
+
+    # Color actual power based on 10% target deviation
+    power_style = "bold white"
+    if target_power is not None and target_power > 0 and record.power_watts is not None:
+        dev = abs(record.power_watts - target_power) / target_power
+        power_style = "bold green" if dev <= 0.10 else "bold red"
 
     top_grid = Table.grid(padding=(0, 4))
     top_grid.add_row(
-        Panel(Align.center(Text(f"{power_str}", style="bold white")), title="Power (W)",
+        Panel(Align.center(Text(power_str, style=power_style)), title="Power (W)",
               border_style="cyan"),
+        Panel(Align.center(Text(target_str, style="bold white")), title="Target (W)",
+              border_style="yellow"),
+        Panel(Align.center(Text(speed_str, style="bold white")), title="Speed (km/h)",
+              border_style="blue"),
         Panel(Align.center(Text(f"{hr_str}", style="bold white")), title="Heart Rate",
               border_style="red"),
         Panel(Align.center(Text(f"{cad_str}", style="bold white")), title="Cadence (RPM)",
@@ -99,8 +112,10 @@ def build_live_layout(record: CyclingRecord, zones: CogganZones, elapsed: int,
 
 def render_live_dashboard(record: CyclingRecord, zones: CogganZones, elapsed: int,
                           avg_power: float, avg_hr: float, avg_cad: float,
-                          time_in_zones: dict[int, float]) -> Layout:
-    return build_live_layout(record, zones, elapsed, avg_power, avg_hr, avg_cad, time_in_zones)
+                          time_in_zones: dict[int, float],
+                          target_power: float | None = None) -> Layout:
+    return build_live_layout(record, zones, elapsed, avg_power, avg_hr, avg_cad, time_in_zones,
+                             target_power=target_power)
 
 
 def render_session_report(session: Session, zones: CogganZones) -> None:

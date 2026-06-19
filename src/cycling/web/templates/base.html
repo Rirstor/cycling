@@ -85,7 +85,20 @@
         .timer-label { font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
         .timer-value { font-size: 1.8rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; }
 
-        /* Row 2: Metrics */
+        /* Row 2: Power row — Actual Watts | Target Watts | Speed */
+        .power-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; }
+        .power-row .metric-box {
+            background: #1a1a2e; border-radius: 10px; padding: 0.5rem;
+            text-align: center;
+        }
+        .power-row .metric-value { font-size: 2rem; font-weight: 700; line-height: 1.2; }
+        .power-row .metric-unit  { font-size: 0.7rem; color: #888; display: block; margin-top: 0.1rem; }
+
+        /* Power color states — 10% target deviation threshold */
+        .metric-value.on-target  { color: #00cc66; }
+        .metric-value.off-target { color: #ff3333; }
+
+        /* Row 3: Metrics (cadence, HR) */
         .metrics-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
         .metric-box {
             background: #1a1a2e; border-radius: 10px; padding: 0.6rem;
@@ -93,22 +106,6 @@
         }
         .metric-value { font-size: 2rem; font-weight: 700; line-height: 1.2; }
         .metric-unit { font-size: 0.7rem; color: #888; display: block; margin-top: 0.1rem; }
-
-        /* Row 3: Target + Speed */
-        .target-row {
-            background: #1a1a2e; border-radius: 10px; padding: 0.6rem 0.8rem;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .target-main { display: flex; align-items: baseline; gap: 0.3rem; flex-wrap: wrap; }
-        .target-label { font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
-        .target-watts { font-size: 2.2rem; font-weight: 700; line-height: 1.1; }
-        .target-unit { font-size: 0.85rem; color: #888; }
-        .target-delta { font-size: 1rem; font-weight: 700; margin-left: 0.3rem; }
-        .target-delta.on-target  { color: #00cc66; }
-        .target-delta.off-target { color: #ff3333; }
-        .speed-display { text-align: right; }
-        .speed-value { font-size: 1.6rem; font-weight: 700; line-height: 1.1; }
-        .speed-unit { font-size: 0.7rem; color: #888; display: block; }
 
         /* Row 4: Chart */
         .chart-area { flex: 1; min-height: 80px; background: #1a1a2e; border-radius: 10px; overflow: hidden; }
@@ -147,8 +144,8 @@
                 box-sizing: border-box;
             }
             .timer-row     { grid-column: 1; grid-row: 1; }
-            .metrics-row   { grid-column: 1; grid-row: 2; }
-            .target-row    { grid-column: 1; grid-row: 3; }
+            .power-row     { grid-column: 1; grid-row: 2; }
+            .metrics-row   { grid-column: 1; grid-row: 3; }
             .chart-area    { grid-column: 2; grid-row: 1 / 4; min-height: 0; }
             .action-bar    { grid-column: 1 / 3; grid-row: 4; position: static; }
             .routine-name-bar { grid-column: 1 / 3; }
