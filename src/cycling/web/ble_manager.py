@@ -72,6 +72,12 @@ class BLEManager:
         self._session_id = value
 
     @property
+    def device_name(self) -> str:
+        if self._client and self._client.device_name:
+            return self._client.device_name
+        return ""
+
+    @property
     def routine(self) -> RoutineEngine:
         return self._routine
 

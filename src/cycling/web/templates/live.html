@@ -160,7 +160,6 @@ function connectToDevice(address) {
                 if (deviceSSE) { deviceSSE.close(); deviceSSE = null; }
                 document.getElementById('device-list-view').style.display = 'none';
                 document.getElementById('dashboard').classList.add('active');
-                document.body.dataset.dashboardActive = 'true';
                 document.getElementById('status-text').textContent = 'Connected';
                 document.getElementById('status-dot').className = 'status-dot on';
                 loadRoutines();
@@ -357,7 +356,6 @@ function disconnectTrainer() {
         .then(function() {
             if (liveSSE) { liveSSE.close(); liveSSE = null; }
             document.getElementById('dashboard').classList.remove('active');
-            document.body.dataset.dashboardActive = 'false';
             document.getElementById('device-list-view').style.display = 'block';
             document.getElementById('status-text').textContent = 'Disconnected';
             document.getElementById('status-dot').className = 'status-dot off';

@@ -48,12 +48,19 @@
         /* Prevent scroll interference on chart canvas */
         #workout-chart { touch-action: none; }
 
-        /* ── Mobile Dashboard Layout ── */
-        body[data-dashboard-active="true"] nav { display: none; }
-        body[data-dashboard-active="true"] main.container {
-            padding-top: 0; padding-bottom: 0;
-            max-width: 100%;
+        /* Connection indicator */
+        #connection-indicator {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            font-size: 0.85rem;
         }
+        #connection-indicator .dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            flex-shrink: 0;
+        }
+        #connection-indicator .dot.off { background: #666; }
+        #connection-indicator .dot.on  { background: #00cc66; box-shadow: 0 0 6px #00cc66; }
+        #connection-indicator .dot.connecting { background: #ffcc00; animation: pulse 0.8s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
         #dashboard { display: none; }
         #dashboard.active {
@@ -163,6 +170,9 @@
             <li><a href="/zones">Zones</a></li>
             <li><a href="/ftp">FTP</a></li>
         </ul>
+        <ul>
+            <li><span id="connection-indicator"><span class="dot off" id="gl-status-dot"></span><span id="gl-status-text">Disconnected</span></span></li>
+        </ul>
     </nav>
     <main class="container">
         {% block content %}{% endblock %}
@@ -171,6 +181,32 @@
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/static/sw.js');
         }
+    </script>
+    <script>
+        (function() {
+            var dot = document.getElementById('gl-status-dot');
+            var text = document.getElementById('gl-status-text');
+            if (!dot || !text) return;
+            function poll() {
+                fetch('/api/status')
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.connected) {
+                            dot.className = 'dot on';
+                            text.textContent = data.device_name || 'Connected';
+                        } else {
+                            dot.className = 'dot off';
+                            text.textContent = 'Disconnected';
+                        }
+                    })
+                    .catch(function() {
+                        dot.className = 'dot off';
+                        text.textContent = 'Disconnected';
+                    });
+            }
+            poll();
+            setInterval(poll, 3000);
+        })();
     </script>
 </body>
 </html>
