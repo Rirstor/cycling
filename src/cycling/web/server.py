@@ -255,10 +255,14 @@ async def api_routine_preview(name: str) -> dict:
 
 @app.get("/api/status")
 async def api_status() -> dict:
+    elapsed = 0
+    if ble_manager.start_time:
+        elapsed = int((datetime.now() - ble_manager.start_time).total_seconds())
     return {
         "connected": ble_manager.is_connected,
         "recording": ble_manager.is_recording,
         "device_name": ble_manager.device_name,
+        "elapsed": elapsed,
     }
 
 
