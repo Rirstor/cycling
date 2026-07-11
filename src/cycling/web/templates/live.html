@@ -160,7 +160,6 @@ function connectToDevice(address) {
                 if (deviceSSE) { deviceSSE.close(); deviceSSE = null; }
                 document.getElementById('device-list-view').style.display = 'none';
                 document.getElementById('dashboard').classList.add('active');
-                document.body.dataset.dashboardActive = 'true';
                 document.getElementById('status-text').textContent = 'Connected';
                 document.getElementById('status-dot').className = 'status-dot on';
                 loadRoutines();
@@ -357,7 +356,6 @@ function disconnectTrainer() {
         .then(function() {
             if (liveSSE) { liveSSE.close(); liveSSE = null; }
             document.getElementById('dashboard').classList.remove('active');
-            document.body.dataset.dashboardActive = 'false';
             document.getElementById('device-list-view').style.display = 'block';
             document.getElementById('status-text').textContent = 'Disconnected';
             document.getElementById('status-dot').className = 'status-dot off';
@@ -727,6 +725,29 @@ window.addEventListener('orientationchange', function() {
 });
 
 document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/status')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.connected) {
+                if (deviceSSE) { deviceSSE.close(); deviceSSE = null; }
+                document.getElementById('device-list-view').style.display = 'none';
+                document.getElementById('dashboard').classList.add('active');
+                var name = data.device_name || 'Connected';
+                var elapsed = formatDuration(data.elapsed || 0);
+                document.getElementById('status-text').textContent = name + ' (' + elapsed + ')';
+                document.getElementById('status-dot').className = 'status-dot on';
+                document.getElementById('connected-name').style.display = 'inline';
+                document.getElementById('connected-name').textContent = name;
+                loadRoutines();
+                startLiveSSE();
+                var params = new URLSearchParams(window.location.search);
+                var routineName = params.get('routine');
+                if (routineName) {
+                    setTimeout(function() { selectRoutine(routineName); }, 500);
+                }
+            }
+        })
+        .catch(function() {});
     setTimeout(function() {
         viewStart = 0;
         viewEnd = chartTotalDuration || 600;
