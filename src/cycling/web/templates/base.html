@@ -48,6 +48,13 @@
         /* Prevent scroll interference on chart canvas */
         #workout-chart { touch-action: none; }
 
+        /* Allow nav items to wrap when they exceed available width */
+        nav,
+        nav ul {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
         /* Connection indicator — styled to match Pico nav links exactly */
         #connection-indicator {
             display: inline-flex; align-items: center; gap: 0.3rem;
