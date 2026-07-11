@@ -48,10 +48,12 @@
         /* Prevent scroll interference on chart canvas */
         #workout-chart { touch-action: none; }
 
-        /* Connection indicator */
+        /* Connection indicator — styled to match Pico nav links exactly */
         #connection-indicator {
-            display: inline-flex; align-items: center; gap: 0.4rem;
-            font-size: 0.85rem;
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: var(--pico-nav-element-spacing-vertical, 0.375rem) var(--pico-nav-element-spacing-horizontal, 0.5rem);
+            color: var(--pico-nav-link-color, var(--pico-color));
+            white-space: nowrap;
         }
         #connection-indicator .dot {
             width: 8px; height: 8px; border-radius: 50%;
@@ -59,7 +61,6 @@
         }
         #connection-indicator .dot.off { background: #666; }
         #connection-indicator .dot.on  { background: #00cc66; box-shadow: 0 0 6px #00cc66; }
-        #connection-indicator .dot.connecting { background: #ffcc00; animation: pulse 0.8s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
         #dashboard { display: none; }
