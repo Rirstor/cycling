@@ -49,7 +49,9 @@ class RoutineEngine:
     def pause(self) -> None:
         if self._state.status == "playing":
             self._state.status = "paused"
-        elif self._state.status == "paused":
+
+    def resume(self) -> None:
+        if self._state.status == "paused":
             self._state.status = "playing"
 
     def stop(self) -> None:

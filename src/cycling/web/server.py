@@ -215,6 +215,12 @@ async def api_routine_pause() -> dict:
     return {"status": "ok"}
 
 
+@app.post("/api/routine/resume")
+async def api_routine_resume() -> dict:
+    await ble_manager.routine_resume()
+    return {"status": "ok"}
+
+
 @app.post("/api/routine/stop")
 async def api_routine_stop() -> dict:
     await ble_manager.routine_stop()
