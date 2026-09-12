@@ -45,13 +45,8 @@
             .metrics-chart-layout { grid-template-columns: minmax(140px, 1fr) 2.5fr; }
         }
 
-        /* Allow vertical page scroll everywhere, including over the chart.
-           Previously touch-action:none on the canvas swallowed all touch
-           gestures so the page could only be scrolled from the screen edges. */
         #workout-chart { touch-action: pan-y; }
-
-        /* Chart container must not trap vertical scroll either */
-        .chart-area { touch-action: pan-y; overscroll-behavior: contain; }
+        .chart-area { touch-action: pan-y; overscroll-behavior: auto; }
 
         /* Allow nav items to wrap when they exceed available width */
         nav,
@@ -126,9 +121,15 @@
         .metric-value { font-size: 2rem; font-weight: 700; line-height: 1.2; }
         .metric-unit { font-size: 0.7rem; color: #888; display: block; margin-top: 0.1rem; }
 
-        /* Row 4: Chart */
-        .chart-area { flex: 1; min-height: 80px; background: #1a1a2e; border-radius: 10px; overflow: hidden; }
-        #workout-chart { width: 100%; height: 100%; display: block; }
+        .chart-area { flex: 1; min-height: 220px; background: #1a1a2e; border-radius: 10px; overflow: clip; position: relative; }
+        #workout-chart { width: 100%; height: 100%; display: block; touch-action: pan-y; }
+        .chart-zoom-controls { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; z-index: 5; }
+        .chart-zoom-controls button {
+            width: 36px; height: 36px; border-radius: 8px; border: 1px solid #2a2a3e;
+            background: rgba(42, 42, 62, 0.92); color: #fff; font-size: 1.1rem;
+            font-weight: 700; line-height: 1; cursor: pointer; padding: 0;
+        }
+        .chart-zoom-controls button:active { background: #00cc66; color: #000; }
 
         /* Bottom: action bar */
         .action-bar {
