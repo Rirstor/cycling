@@ -45,8 +45,13 @@
             .metrics-chart-layout { grid-template-columns: minmax(140px, 1fr) 2.5fr; }
         }
 
-        /* Prevent scroll interference on chart canvas */
-        #workout-chart { touch-action: none; }
+        /* Allow vertical page scroll everywhere, including over the chart.
+           Previously touch-action:none on the canvas swallowed all touch
+           gestures so the page could only be scrolled from the screen edges. */
+        #workout-chart { touch-action: pan-y; }
+
+        /* Chart container must not trap vertical scroll either */
+        .chart-area { touch-action: pan-y; overscroll-behavior: contain; }
 
         /* Allow nav items to wrap when they exceed available width */
         nav,
@@ -76,6 +81,7 @@
             padding: 0.4rem; padding-bottom: 64px;
             height: calc(100dvh - 0.8rem);
             box-sizing: border-box;
+            overflow-y: auto;
         }
         .routine-selector {
             background: #1a1a2e; border-radius: 12px; padding: 1rem;

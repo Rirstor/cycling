@@ -86,6 +86,15 @@ class BLEManager:
         template = get_workout(template_name)
         if not template:
             raise ValueError(f"Unknown routine: {template_name}")
+        current = self._routine.state.template
+        if (
+            current is not None
+            and current.name == template.name
+            and self._routine.state.status == "paused"
+        ):
+            self._routine.resume()
+            self._last_tick_time = datetime.now()
+            return
         self._routine.set_ftp(self._ftp)
         self._routine.load(template)
         self._routine.start()
@@ -93,6 +102,9 @@ class BLEManager:
 
     async def routine_pause(self) -> None:
         self._routine.pause()
+
+    async def routine_resume(self) -> None:
+        self._routine.resume()
 
     async def routine_stop(self) -> None:
         self._routine.stop()

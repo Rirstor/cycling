@@ -104,10 +104,33 @@ let chartActuals = [];
 let chartTotalDuration = 0;
 let viewStart = 0;
 let viewEnd = 0;
-let isDragging = false;
-let dragStartX = 0;
-let dragStartViewStart = 0;
-let dragViewWindow = 0;
+
+// Screen Wake Lock — held only while a routine is playing
+let wakeLock = null;
+async function requestWake() {
+    try {
+        if ('wakeLock' in navigator && !wakeLock) {
+            wakeLock = await navigator.wakeLock.request('screen');
+            if (wakeLock) {
+                wakeLock.addEventListener('release', function() { wakeLock = null; });
+            }
+        }
+    } catch (e) {}
+}
+async function releaseWake() {
+    try {
+        if (wakeLock) {
+            await wakeLock.release();
+            wakeLock = null;
+        }
+    } catch (e) { wakeLock = null; }
+}
+document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible') {
+        const btn = document.getElementById('routine-play-btn');
+        if (btn && btn.textContent.includes('Pause')) { requestWake(); }
+    }
+});
 
 function startDeviceSSE() {
     if (deviceSSE) deviceSSE.close();
@@ -227,13 +250,22 @@ function closeRoutine() {
         fetch('/api/routine/stop', { method: 'POST' });
         routineActive = false;
     }
+    releaseWake();
     document.getElementById('routine-selector').style.display = 'block';
 }
 
 function toggleRoutinePlay() {
     if (!selectedRoutine) return;
     const btn = document.getElementById('routine-play-btn');
-    if (btn.textContent.includes('Play') || btn.textContent.includes('Resume')) {
+    if (btn.textContent.includes('Resume')) {
+        fetch('/api/routine/resume', { method: 'POST' })
+            .then(function(r) { return r.json(); }).then(function() {
+                btn.innerHTML = '&#10074;&#10074; Pause';
+                routineActive = true;
+                document.getElementById('routine-status-badge').textContent = 'Active';
+                requestWake();
+            });
+    } else if (btn.textContent.includes('Play')) {
         const formData = new FormData();
         formData.append('name', selectedRoutine.name);
         fetch('/api/routine/start', { method: 'POST', body: formData })
@@ -242,6 +274,7 @@ function toggleRoutinePlay() {
                 btn.innerHTML = '&#10074;&#10074; Pause';
                 routineActive = true;
                 document.getElementById('routine-status-badge').textContent = 'Active';
+                requestWake();
                 fetch('/api/routine/profile')
                     .then(function(r) { return r.json(); })
                     .then(function(data) {
@@ -259,6 +292,7 @@ function toggleRoutinePlay() {
             .then(function(r) { return r.json(); }).then(function() {
                 btn.innerHTML = '&#9654; Resume';
                 document.getElementById('routine-status-badge').textContent = 'Paused';
+                releaseWake();
             });
     }
 }
@@ -268,6 +302,7 @@ function stopRoutine() {
     document.getElementById('routine-play-btn').innerHTML = '&#9654; Play';
     document.getElementById('routine-status-badge').textContent = 'Stopped';
     routineActive = false;
+    releaseWake();
 }
 
 // Chart functions
@@ -351,6 +386,7 @@ function renderRoutineGrid() {
 }
 
 function disconnectTrainer() {
+    releaseWake();
     fetch('/api/disconnect', { method: 'POST' })
         .then(function(r) { return r.json(); })
         .then(function() {
@@ -460,17 +496,21 @@ function updateDashboard(data) {
             if (data.routine_status === 'playing') {
                 badge.textContent = 'Active';
                 if (playBtn) playBtn.innerHTML = '&#10074;&#10074; Pause';
+                requestWake();
             } else if (data.routine_status === 'paused') {
                 badge.textContent = 'Paused';
                 if (playBtn) playBtn.innerHTML = '&#9654; Resume';
+                releaseWake();
             } else if (data.routine_status === 'completed') {
                 badge.textContent = 'Completed';
                 if (playBtn) playBtn.innerHTML = '&#9654; Play';
+                releaseWake();
             }
         }
     } else {
         if (nameBar) nameBar.style.display = 'none';
         if (playBtn) playBtn.innerHTML = '&#9654; Play';
+        releaseWake();
     }
 
     // Update chart if routine active
